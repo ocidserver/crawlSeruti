@@ -1,426 +1,390 @@
-# 🤖 Web Crawler - Seruti
+# 🤖 BPS Web Crawler - Multi Crawler System
 
-Automated Login & File Download System menggunakan Python, Flask, dan Selenium.
+Automated web crawler system untuk BPS dengan support multiple crawlers (Seruti & Susenas), scheduler, dan database management.
 
-## 📋 Fitur
+[![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/)
+[![Flask](https://img.shields.io/badge/Flask-3.0+-green.svg)](https://flask.palletsprojects.com/)
+[![Selenium](https://img.shields.io/badge/Selenium-4.15+-orange.svg)](https://www.selenium.dev/)
+[![SQLite](https://img.shields.io/badge/SQLite-3-blue.svg)](https://www.sqlite.org/)
 
-- ✅ **Web Interface** - Dashboard modern untuk mengontrol crawler
-- ✅ **Auto Login** - Login otomatis ke website target
-- ✅ **SSO Support** - 🔐 Otomatis handle SSO BPS (https://sso.bps.go.id)
-- ✅ **File Download** - Download file secara otomatis
-- ✅ **🤖 AUTO SCHEDULER** - Crawl otomatis sesuai jadwal (daily, hourly, interval, custom cron)
-- ✅ **Task Scheduler** - Windows Task Scheduler integration untuk auto-start
-- ✅ **Headless Mode** - Jalankan browser tanpa tampilan GUI
-- ✅ **Download Manager** - Kelola dan download file yang sudah diunduh
-- ✅ **Real-time Logs** - Monitoring aktivitas crawler
-- ✅ **Customizable** - Konfigurasi field selector dan URL
-- ✅ **Auto Screenshot** - Screenshot otomatis saat error untuk debugging
+---
+
+## 📋 Features
+
+### 🎯 Core Features
+
+- ✅ **Multi-Crawler Architecture** - Support Seruti & Susenas crawlers
+- ✅ **SSO Authentication** - Auto login via BPS SSO (https://sso.bps.go.id)
+- ✅ **Smart Download Detection** - Skip duplicate data berdasarkan tanggal
+- ✅ **Task Scheduler** - Scheduled jobs dengan cron-like scheduling
+- ✅ **SQLite Database** - ACID-compliant data storage
+- ✅ **Headless Mode** - Background execution tanpa GUI
+
+### 📊 Management Features
+
+- ✅ **Job History** - Track semua jobs (active, completed, cancelled, failed)
+- ✅ **Download Log** - Complete download tracking dengan task name
+- ✅ **Retry Mechanism** - Auto-retry dengan configurable delay
+- ✅ **Web Dashboard** - Modern UI dengan table format
+- ✅ **Real-time Status** - Live job monitoring
+
+### 🔒 Data & Security
+
+- ✅ **Transaction Safety** - No data loss saat system crash
+- ✅ **Data Validation** - Check duplicate sebelum download
+- ✅ **Environment Variables** - Secure credential management
+- ✅ **Backup System** - Auto backup saat migration
+
+---
 
 ## 🚀 Quick Start
 
-### 1. Install Dependencies
+### 1. Setup Environment
 
 ```powershell
-# Install Python packages
+# Clone repository
+git clone https://github.com/ocidserver/crawlSeruti.git
+cd crawlSeruti
+
+# Install dependencies (using venv)
 .venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 
-### 2. Konfigurasi
-
-Copy file `.env.example` ke `.env` dan sesuaikan konfigurasi:
+### 2. Configure
 
 ```powershell
+# Copy environment file
 Copy-Item .env.example .env
+
+# Edit .env file
+notepad .env
 ```
 
-Edit file `.env`:
+**Required Configuration:**
 
 ```env
-# Target Website Configuration
-TARGET_URL=https://example.com/login
-DOWNLOAD_URL=https://example.com/logs
-
-# Login Credentials
+# BPS SSO Credentials
 USERNAME=your_username
 PASSWORD=your_password
 
-# Application Settings
+# Flask Configuration
 FLASK_SECRET_KEY=your-secret-key-here
-FLASK_DEBUG=True
 FLASK_PORT=5000
+FLASK_DEBUG=True
 
-# Browser Settings
-HEADLESS_MODE=False
-BROWSER_TIMEOUT=30
+# Download Settings
+DOWNLOAD_PATH=downloads
+HEADLESS_MODE=True
 ```
 
-### 3. Install Chrome Driver
-
-Aplikasi akan otomatis mendownload ChromeDriver saat pertama kali dijalankan. Pastikan Google Chrome sudah terinstall.
-
-### 4. Jalankan Aplikasi
+### 3. Run Application
 
 ```powershell
+# Start Flask server
 .venv\Scripts\python.exe run.py
+
+# Access web interface
+# Open browser: http://localhost:5000
 ```
 
-Buka browser dan akses: **http://localhost:5000**
+---
 
-## � SSO BPS Support
+## 📖 Documentation
 
-Crawler ini **otomatis mendeteksi dan handle redirect ke SSO BPS**!
+### 📚 User Guides
 
-Ketika target URL redirect ke `https://sso.bps.go.id`, crawler akan:
+- [Getting Started Guide](docs/GETTING_STARTED.md) - Panduan lengkap untuk pemula
+- [Seruti Crawler Guide](docs/SERUTI_GUIDE.md) - Panduan crawler Seruti
+- [Susenas Crawler Guide](docs/SUSENAS_GUIDE.md) - Panduan crawler Susenas
+- [Scheduler Guide](docs/SCHEDULER_GUIDE.md) - Panduan task scheduler
 
-- ✅ Otomatis detect redirect SSO
-- ✅ Fill username & password dari file `.env`
-- ✅ Submit form SSO
-- ✅ Wait untuk redirect kembali ke aplikasi
-- ✅ Lanjutkan proses download
+### 🔧 Technical Docs
 
-**Lihat dokumentasi lengkap:** [SSO_GUIDE.md](SSO_GUIDE.md)
+- [Architecture](docs/ARCHITECTURE.md) - System architecture & design
+- [Database Schema](docs/DATABASE.md) - SQLite schema & queries
+- [API Reference](docs/API.md) - REST API endpoints
 
-## 🤖 AUTO SCHEDULER
+### 📝 Change History
 
-**Crawler bisa berjalan otomatis sesuai jadwal!**
+- [CHANGELOG.md](docs/CHANGELOG.md) - Complete version history
+- [Migration Guide](docs/MIGRATION.md) - Upgrade instructions
 
-### Quick Start Automation:
+---
 
-**1. Via Web API (Paling Mudah):**
-
-```powershell
-# Start scheduler - setiap hari jam 8 pagi
-Invoke-WebRequest -Method POST -Uri "http://localhost:5000/api/scheduler/start" `
-  -Headers @{"Content-Type"="application/json"} `
-  -Body '{"mode":"daily","hour":8,"minute":0}'
-
-# Start scheduler - setiap 30 menit
-Invoke-WebRequest -Method POST -Uri "http://localhost:5000/api/scheduler/start" `
-  -Headers @{"Content-Type"="application/json"} `
-  -Body '{"mode":"interval","hours":0,"minutes":30}'
-
-# Check status
-Invoke-WebRequest -Uri "http://localhost:5000/api/scheduler/status"
-```
-
-**2. Via Standalone Script:**
-
-```powershell
-# Run once
-.\.venv\Scripts\python.exe auto_crawl.py
-
-# Run loop setiap 30 menit
-.\.venv\Scripts\python.exe auto_crawl.py --loop --interval 30
-```
-
-**3. Via Windows Task Scheduler (Auto-start):**
-
-- Buka Task Scheduler (`taskschd.msc`)
-- Create Task → Program: `run_auto_crawl.bat`
-- Set trigger (daily/startup/etc)
-
-**� Dokumentasi Lengkap:**
-
-- [STEP_BY_STEP_AUTOMATION.md](STEP_BY_STEP_AUTOMATION.md) - **Tahapan lengkap automation**
-- [AUTOMATION_GUIDE.md](AUTOMATION_GUIDE.md) - Guide detail semua method
-- [QUICKSTART_AUTOMATION.md](QUICKSTART_AUTOMATION.md) - Quick reference
-
-## �📁 Struktur Project
+## 🏗️ Architecture
 
 ```
 crawlSeruti/
 ├── app/
-│   ├── __init__.py          # Flask app factory
-│   ├── config.py            # Konfigurasi aplikasi
-│   ├── crawler.py           # Selenium crawler engine
-│   ├── scheduler.py         # 🤖 Auto scheduler untuk crawl otomatis
-│   ├── routes.py            # API endpoints
-│   ├── templates/
-│   │   └── index.html       # Web dashboard
-│   └── static/              # Static files (CSS, JS)
-├── downloads/               # Downloaded files
-├── logs/                    # Application logs
-├── auto_crawl.py            # 🤖 Standalone automation script
-├── start_crawler.bat        # Windows batch file untuk start app
-├── run_auto_crawl.bat       # Windows batch file untuk auto crawl
-├── .env                     # Environment variables (buat manual)
-├── .env.example             # Template konfigurasi
-├── .gitignore              # Git ignore rules
-├── requirements.txt         # Python dependencies
-└── run.py                   # Main entry point
+│   ├── __init__.py           # Flask app factory
+│   ├── config.py             # Configuration management
+│   ├── database.py           # SQLite database manager
+│   ├── scheduler.py          # APScheduler wrapper
+│   ├── download_log.py       # Download tracking
+│   ├── routes.py             # API endpoints
+│   ├── crawlers/
+│   │   ├── base_crawler.py   # Abstract base class
+│   │   ├── seruti_crawler.py # Seruti implementation
+│   │   └── susenas_crawler.py# Susenas implementation
+│   └── templates/
+│       └── index.html        # Web dashboard
+├── docs/                     # Documentation
+├── tests/                    # Test files
+├── downloads/                # Downloaded files
+├── crawler.db                # SQLite database
+├── requirements.txt          # Python dependencies
+└── run.py                    # Application entry point
 ```
-
-## 🎯 Cara Penggunaan
-
-### Web Interface
-
-1. **Buka Dashboard**
-
-   - Akses http://localhost:5000
-   - Dashboard akan menampilkan form crawl
-
-2. **Isi Form Crawl**
-
-   - **Username & Password**: Kredensial login
-   - **Target URL**: URL halaman login
-   - **Download URL**: URL halaman download (optional)
-   - **Headless Mode**: Centang untuk menjalankan tanpa tampilan browser
-
-3. **Advanced Settings** (Optional)
-
-   - **Username Field**: Nama field input username (default: `username`)
-   - **Password Field**: Nama field input password (default: `password`)
-   - **Submit Button**: XPath tombol submit (default: `//button[@type='submit']`)
-   - **Download Button**: XPath tombol download
-
-4. **Start Crawl**
-
-   - Klik tombol "🚀 Start Crawl"
-   - Tunggu proses selesai
-   - File akan muncul di bagian "Downloaded Files"
-
-5. **Download Files**
-
-   - Klik tombol "⬇️ Download" pada file yang diinginkan
-   - File akan didownload ke komputer Anda
-
-6. **View Logs**
-   - Klik "🔄 Refresh Logs" untuk melihat activity log
-   - Berguna untuk debugging
-
-### Programmatic Usage
-
-Anda juga bisa menggunakan crawler secara programmatic:
-
-```python
-from app.crawler import SerutiCrawler
-
-# Inisialisasi crawler
-crawler = SerutiCrawler(
-    username="your_username",
-    password="your_password",
-    headless=False
-)
-
-# Jalankan full crawl
-result = crawler.run_full_crawl(
-    target_url="https://example.com/login",
-    download_url="https://example.com/download",
-    username_field="username",
-    password_field="password",
-    submit_button="//button[@type='submit']",
-    download_button_xpath="//a[@id='download']"
-)
-
-print(result)
-```
-
-## 🔧 API Endpoints
-
-### Crawl Endpoints
-
-#### POST `/api/crawl`
-
-Memulai proses crawling
-
-**Request Body:**
-
-```json
-{
-  "username": "user",
-  "password": "pass",
-  "target_url": "https://example.com/login",
-  "download_url": "https://example.com/download",
-  "username_field": "username",
-  "password_field": "password",
-  "submit_button": "//button[@type='submit']",
-  "download_button_xpath": "//a[@id='download']",
-  "headless": false
-}
-```
-
-**Response:**
-
-```json
-{
-  "success": true,
-  "message": "Crawl completed successfully. File: report.pdf",
-  "file": "report.pdf",
-  "screenshots": []
-}
-```
-
-#### GET `/api/downloads`
-
-List semua file yang sudah didownload
-
-**Response:**
-
-```json
-{
-  "success": true,
-  "files": [
-    {
-      "filename": "report.pdf",
-      "size": 1024000,
-      "modified": "2025-11-07 10:30:00"
-    }
-  ]
-}
-```
-
-#### GET `/api/download/<filename>`
-
-Download file tertentu
-
-#### GET `/api/logs`
-
-Melihat application logs
-
-#### GET `/api/config`
-
-Mendapatkan konfigurasi default
 
 ---
 
-### 🤖 Scheduler Endpoints (NEW!)
+## 🎮 Usage
 
-#### POST `/api/scheduler/start`
+### Web Dashboard
 
-Start automated scheduler
+1. **Start Server**
 
-**Request Body:**
+   ```powershell
+   .venv\Scripts\python.exe run.py
+   ```
 
-```json
-{
-  "mode": "daily", // daily, hourly, interval, custom
-  "hour": 8, // for daily mode (0-23)
-  "minute": 0, // for daily/hourly mode (0-59)
-  "hours": 0, // for interval mode
-  "minutes": 30, // for interval mode
-  "cron": "0 8 * * *" // for custom mode
-}
+2. **Open Dashboard**
+
+   - URL: http://localhost:5000
+   - Select crawler: SERUTI atau SUSENAS
+   - Configure schedule
+   - Add job
+
+3. **Monitor Jobs**
+   - View active/inactive jobs in table format
+   - Check status, next run, last run
+   - Cancel jobs if needed
+   - View download log
+
+### Command Line
+
+**Manual Crawl:**
+
+```powershell
+# Seruti crawler
+.venv\Scripts\python.exe -c "from app.crawlers import get_crawler; from app.config import Config; crawler = get_crawler('seruti')(Config.USERNAME, Config.PASSWORD); print(crawler.run())"
+
+# Susenas crawler
+.venv\Scripts\python.exe -c "from app.crawlers import get_crawler; from app.config import Config; crawler = get_crawler('susenas')(Config.USERNAME, Config.PASSWORD); print(crawler.run())"
 ```
 
-**Response:**
+**Run Tests:**
 
-```json
-{
-  "success": true,
-  "message": "✅ Scheduler started: Daily at 08:00",
-  "is_running": true
-}
+```powershell
+# Test Seruti
+.venv\Scripts\python.exe tests\test_multi_crawler.py
+
+# Test Susenas
+.venv\Scripts\python.exe tests\test_susenas_crawl.py
 ```
-
-#### POST `/api/scheduler/stop`
-
-Stop the scheduler
-
-**Response:**
-
-```json
-{
-  "success": true,
-  "message": "🛑 Scheduler stopped",
-  "is_running": false
-}
-```
-
-#### GET `/api/scheduler/status`
-
-Get scheduler status and jobs
-
-**Response:**
-
-```json
-{
-  "success": true,
-  "is_running": true,
-  "jobs": [
-    {
-      "id": "daily_crawl",
-      "name": "Daily Auto Crawl",
-      "next_run": "2024-01-15 08:00:00"
-    }
-  ]
-}
-```
-
-#### POST `/api/scheduler/run-now`
-
-Trigger crawl immediately (manual trigger)
-
-Mendapatkan konfigurasi default
-
-## 🔍 Tips & Troubleshooting
-
-### Menemukan XPath Element
-
-1. Buka website target di Chrome
-2. Klik kanan pada element (input/button) → Inspect
-3. Klik kanan pada HTML element → Copy → Copy XPath
-4. Paste XPath tersebut di Advanced Settings
-
-### Common Issues
-
-**Error: ChromeDriver not found**
-
-- Pastikan Google Chrome terinstall
-- Aplikasi akan auto-download driver saat pertama kali run
-
-**Error: Element not found**
-
-- Periksa XPath selector
-- Coba gunakan Headless Mode = False untuk debugging
-- Check screenshot di folder `logs/` untuk melihat kondisi halaman
-
-**Error: Download tidak berjalan**
-
-- Pastikan Download URL sudah benar
-- Atau gunakan Download Button XPath jika download via button
-- Check folder `downloads/` apakah file ada
-
-**Login gagal**
-
-- Periksa username dan password
-- Check apakah ada CAPTCHA (belum support auto CAPTCHA)
-- Lihat logs untuk detail error
-
-## 🛡️ Security Notes
-
-- **JANGAN commit file `.env`** ke Git (sudah ada di `.gitignore`)
-- Gunakan environment variables untuk credentials
-- Untuk production, set `FLASK_DEBUG=False`
-- Ganti `FLASK_SECRET_KEY` dengan value yang secure
-
-## 📦 Dependencies
-
-- **Flask** - Web framework
-- **Selenium** - Browser automation
-- **webdriver-manager** - Auto ChromeDriver download
-- **python-dotenv** - Environment variable management
-- **requests** - HTTP library
-- **apscheduler** - Task scheduling (untuk future enhancement)
-
-## 🔮 Future Enhancements
-
-- [ ] Scheduled crawling (cron jobs)
-- [ ] Multi-site support
-- [ ] CAPTCHA handling
-- [ ] Email notifications
-- [ ] Database integration
-- [ ] User authentication
-- [ ] Download queue management
-- [ ] Proxy support
-
-## 📝 License
-
-MIT License - Feel free to use and modify
-
-## 👨‍💻 Developer
-
-Created for automated web crawling and file download purposes.
 
 ---
 
-**Happy Crawling! 🚀**
+## 📊 Crawlers
+
+### 1. Seruti Crawler
+
+- **Target:** https://olah.web.bps.go.id
+- **Function:** Download Progres Triwulan
+- **Authentication:** SSO BPS
+- **Data Format:** Excel (.xlsx)
+- **Performance:** ~57 seconds per download
+- **Optimization:** 11.5% faster vs original
+
+### 2. Susenas Crawler
+
+- **Target:** https://webmonitoring.bps.go.id/sen
+- **Function:** Download 7 progress reports
+- **Reports:**
+  1. Laporan Pencacahan
+  2. Laporan Pemeriksaan (Edcod)
+  3. Laporan Pengiriman ke Kabkot
+  4. Laporan Penerimaan di Kabkot
+  5. Laporan Penerimaan di IPDS
+  6. Laporan Pengolahan Dokumen M
+  7. Laporan Pengolahan Dokumen KP
+- **Performance:** ~40 seconds for 7 files (headless)
+- **Smart Validation:** Skip if data already exists (29 seconds)
+
+---
+
+## 🗄️ Database
+
+### Tables
+
+**scheduled_jobs:**
+
+```sql
+CREATE TABLE scheduled_jobs (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    crawler_type TEXT NOT NULL,
+    start_date TEXT NOT NULL,
+    end_date TEXT NOT NULL,
+    hour INTEGER NOT NULL,
+    minute INTEGER NOT NULL,
+    status TEXT DEFAULT 'active',
+    created_at TEXT NOT NULL,
+    last_run TEXT,
+    last_message TEXT
+);
+```
+
+**download_logs:**
+
+```sql
+CREATE TABLE download_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nama_file TEXT NOT NULL,
+    tanggal_download TEXT NOT NULL,
+    laman_web TEXT NOT NULL,
+    data_tanggal TEXT,
+    task_name TEXT DEFAULT 'Manual'
+);
+```
+
+---
+
+## 🔧 Configuration
+
+### Environment Variables
+
+| Variable           | Description           | Default   |
+| ------------------ | --------------------- | --------- |
+| `USERNAME`         | BPS SSO username      | -         |
+| `PASSWORD`         | BPS SSO password      | -         |
+| `FLASK_SECRET_KEY` | Flask session key     | -         |
+| `FLASK_PORT`       | Web server port       | 5000      |
+| `FLASK_DEBUG`      | Debug mode            | False     |
+| `DOWNLOAD_PATH`    | Download directory    | downloads |
+| `HEADLESS_MODE`    | Browser headless mode | True      |
+
+### Scheduler Configuration
+
+| Parameter     | Description                     | Range      |
+| ------------- | ------------------------------- | ---------- |
+| `start_date`  | Job start date                  | YYYY-MM-DD |
+| `end_date`    | Job end date                    | YYYY-MM-DD |
+| `hour`        | Execution hour                  | 0-23       |
+| `minute`      | Execution minute                | 0-59       |
+| `max_retries` | Max retry attempts              | 0-10       |
+| `retry_delay` | Delay between retries (seconds) | 60+        |
+
+---
+
+## 🧪 Testing
+
+### Run All Tests
+
+```powershell
+# Test multi-crawler
+.venv\Scripts\python.exe tests\test_multi_crawler.py
+
+# Test Susenas crawler
+.venv\Scripts\python.exe tests\test_susenas_crawl.py
+
+# Test download detection
+.venv\Scripts\python.exe tests\test_download_detection.py
+```
+
+### Test Results
+
+- ✅ Seruti: Download successful (57s)
+- ✅ Susenas: 7/7 files downloaded (40s)
+- ✅ Smart validation: Skip duplicate (29s)
+- ✅ Database: ACID transactions working
+- ✅ UI: Table format responsive
+
+---
+
+## 🐛 Troubleshooting
+
+### ChromeDriver Issues
+
+```powershell
+# Fix ChromeDriver path
+.venv\Scripts\python.exe fix_chromedriver.py
+
+# Clear cache
+Remove-Item -Recurse -Force "$env:USERPROFILE\.wdm"
+```
+
+### Database Issues
+
+```bash
+# Check database
+sqlite3 crawler.db ".tables"
+
+# Backup database
+sqlite3 crawler.db ".backup crawler_backup.db"
+
+# Re-migrate from JSON
+rm crawler.db
+# Restore *.json.backup files
+# Restart server (auto-migration)
+```
+
+### Server Not Starting
+
+```powershell
+# Check port availability
+netstat -ano | findstr :5000
+
+# Use different port
+$env:FLASK_PORT="5001"
+.venv\Scripts\python.exe run.py
+```
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please:
+
+1. Fork the repository
+2. Create feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit changes (`git commit -m 'Add AmazingFeature'`)
+4. Push to branch (`git push origin feature/AmazingFeature`)
+5. Open Pull Request
+
+---
+
+## 📜 License
+
+This project is for internal BPS use only.
+
+---
+
+## 👥 Authors
+
+- **IPDS-OCID Team** - BPS Provinsi Kepulauan Riau
+
+---
+
+## 🙏 Acknowledgments
+
+- BPS IT Team untuk SSO infrastructure
+- APScheduler untuk job scheduling
+- Selenium WebDriver untuk browser automation
+- Flask untuk web framework
+- SQLite untuk embedded database
+
+---
+
+## 📞 Support
+
+Untuk bantuan dan pertanyaan:
+
+- Email: [your-email@bps.go.id]
+- Issue Tracker: [GitHub Issues](https://github.com/ocidserver/crawlSeruti/issues)
+
+---
+
+**Last Updated:** November 2025  
+**Version:** 2.0.0  
+**Status:** Production Ready ✅
