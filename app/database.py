@@ -65,6 +65,23 @@ class Database:
                     created_at TEXT DEFAULT CURRENT_TIMESTAMP
                 )
             ''')
+
+            # Table: batch_history
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS batch_history (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    task_name TEXT NOT NULL,
+                    start_date TEXT,
+                    end_date TEXT,
+                    output_format TEXT NOT NULL,
+                    total_rows INTEGER NOT NULL,
+                    columns_json TEXT NOT NULL,
+                    file_path TEXT NOT NULL,
+                    status TEXT DEFAULT 'success',
+                    note TEXT,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
             
             # Create indexes
             cursor.execute('''
@@ -282,6 +299,95 @@ class Database:
         
         return migrated_jobs, migrated_logs
     
+    # -----------------------------
+    # Batch/Log helpers
+    # -----------------------------
+    def get_batchable_tasks(self):
+        """Return distinct task names with counts and date ranges from download_logs"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT 
+                    COALESCE(task_name, '') AS task_name,
+                    COUNT(*) AS total_logs,
+                    MIN(date(tanggal_download)) AS first_download,
+                    MAX(date(tanggal_download)) AS last_download,
+                    MIN(COALESCE(date(data_tanggal), date(tanggal_download))) AS first_data_date,
+                    MAX(COALESCE(date(data_tanggal), date(tanggal_download))) AS last_data_date
+                FROM download_logs
+                WHERE task_name IS NOT NULL AND task_name <> ''
+                GROUP BY task_name
+                ORDER BY task_name
+            ''')
+            return [dict(row) for row in cursor.fetchall()]
+
+    def get_logs_for_task(self, task_name, start_date=None, end_date=None):
+        """Return logs for a specific task, optionally filtered by data_tanggal range (inclusive)"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            query = '''
+                SELECT * FROM download_logs
+                WHERE task_name = ?
+            '''
+            params = [task_name]
+            if start_date:
+                query += " AND date(COALESCE(data_tanggal, tanggal_download)) >= date(?)"
+                params.append(start_date)
+            if end_date:
+                query += " AND date(COALESCE(data_tanggal, tanggal_download)) <= date(?)"
+                params.append(end_date)
+            query += " ORDER BY date(COALESCE(data_tanggal, tanggal_download)) ASC, id ASC"
+            cursor.execute(query, params)
+            return [dict(row) for row in cursor.fetchall()]
+
+    # -----------------------------
+    # Batch history helpers
+    # -----------------------------
+    def add_batch_history(self, task_name, start_date, end_date, output_format,
+                           total_rows, columns, file_path, status='success', note=None):
+        import json as _json
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                INSERT INTO batch_history (
+                    task_name, start_date, end_date, output_format,
+                    total_rows, columns_json, file_path, status, note, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                task_name,
+                start_date,
+                end_date,
+                output_format,
+                int(total_rows),
+                _json.dumps(list(columns), ensure_ascii=False),
+                file_path,
+                status,
+                note,
+                datetime.now().isoformat()
+            ))
+            return cursor.lastrowid
+
+    def list_batch_history(self, limit=100):
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT id, task_name, start_date, end_date, output_format,
+                       total_rows, created_at, status, file_path
+                FROM batch_history
+                ORDER BY datetime(created_at) DESC
+                LIMIT ?
+            ''', (limit,))
+            return [dict(row) for row in cursor.fetchall()]
+
+    def get_batch_history(self, history_id):
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT * FROM batch_history WHERE id = ?
+            ''', (history_id,))
+            row = cursor.fetchone()
+            return dict(row) if row else None
+
     def get_all_download_logs(self, limit=100):
         """Get all download logs with limit"""
         with self.get_connection() as conn:

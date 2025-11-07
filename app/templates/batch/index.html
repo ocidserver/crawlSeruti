@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <title>Batch Log - BPS Web Crawler</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet" />
+  <style>
+    body { background: linear-gradient(135deg,#667eea 0%,#764ba2 100%); min-height:100vh; padding:20px 0; }
+    .card { border-radius:15px; box-shadow:0 10px 30px rgba(0,0,0,.3); margin-bottom:20px; }
+    .card-header { background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); color:#fff; border-radius:15px 15px 0 0 !important; }
+    .btn-gradient { background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); border:none; color:#fff; }
+    .btn-gradient:hover { background:linear-gradient(135deg,#764ba2 0%,#667eea 100%); color:#fff; }
+    .task-row { cursor:pointer; transition:.15s; }
+    .task-row:hover { background:rgba(102,126,234,0.08); }
+    .preview-table-wrapper { max-height:400px; overflow:auto; }
+    .badge-soft { background:rgba(255,255,255,.2); }
+  </style>
+</head>
+<body>
+  <div class="container" style="max-width:1400px;">
+    <div class="d-flex justify-content-between align-items-center text-white mb-4">
+      <div>
+        <h2><i class="bi bi-collection me-2"></i>Batch Log</h2>
+        <p class="mb-0">Gabungkan hasil download suatu task menjadi satu file terstruktur.</p>
+      </div>
+      <div class="d-flex gap-2">
+        <a href="{{ url_for('batch.history') }}" class="btn btn-outline-light"><i class="bi bi-clock-history me-2"></i>Riwayat</a>
+        <a href="{{ url_for('main.index') }}" class="btn btn-light"><i class="bi bi-arrow-left me-2"></i>Kembali</a>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-5">
+        <div class="card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-list-task me-2"></i>Daftar Task</h5>
+            <button class="btn btn-sm btn-light" onclick="reloadTasks()"><i class="bi bi-arrow-clockwise"></i></button>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-hover mb-0 align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>Task</th>
+                    <th>Logs</th>
+                    <th>Range Data</th>
+                  </tr>
+                </thead>
+                <tbody id="taskTableBody">
+                  {% for t in tasks %}
+                  <tr class="task-row" onclick="selectTask('{{ t.task_name }}', '{{ t.first_data_date }}', '{{ t.last_data_date }}')">
+                    <td><strong>{{ t.task_name }}</strong></td>
+                    <td><span class="badge bg-primary">{{ t.total_logs }}</span></td>
+                    <td><small>{{ t.first_data_date }} → {{ t.last_data_date }}</small></td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-7">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-funnel me-2"></i>Parameter Batch</h5>
+          </div>
+          <div class="card-body">
+            <form id="batchForm" onsubmit="runBatch(event)">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">Task Terpilih</label>
+                  <input type="text" class="form-control" id="task_name" name="task_name" readonly required>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Start Date</label>
+                  <input type="date" class="form-control" id="start_date" name="start_date">
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">End Date</label>
+                  <input type="date" class="form-control" id="end_date" name="end_date">
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Format Output</label>
+                  <select class="form-select" id="format" name="format">
+                    <option value="csv">CSV</option>
+                    <option value="xlsx">Excel (XLSX)</option>
+                  </select>
+                </div>
+                <div class="col-md-8">
+                  <label class="form-label">Aksi</label><br />
+                  <div class="btn-group w-100">
+                    <button type="button" class="btn btn-outline-primary" onclick="previewBatch()"><i class="bi bi-eye me-2"></i>Preview</button>
+                    <button type="submit" class="btn btn-gradient"><i class="bi bi-download me-2"></i>Download</button>
+                  </div>
+                </div>
+              </div>
+            </form>
+            <hr />
+            <div id="previewSection" style="display:none;">
+              <h6 class="fw-bold mb-2">Preview (maks 50 baris)</h6>
+              <div class="preview-table-wrapper">
+                <table class="table table-sm table-striped" id="previewTable">
+                  <thead></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+              <p class="small text-muted mb-0" id="previewMeta"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    function selectTask(name, first, last){
+      document.getElementById('task_name').value = name;
+      // Pre-fill date range
+      document.getElementById('start_date').value = first;
+      document.getElementById('end_date').value = last;
+      document.getElementById('previewSection').style.display = 'none';
+    }
+
+    async function reloadTasks(){
+      try {
+  const r = await fetch("{{ url_for('batch.list_tasks') }}");
+        const j = await r.json();
+        if(j.success){
+          const body = document.getElementById('taskTableBody');
+          body.innerHTML='';
+          j.tasks.forEach(t => {
+            const tr = document.createElement('tr');
+            tr.className='task-row';
+            tr.onclick=()=>selectTask(t.task_name, t.first_data_date, t.last_data_date);
+            tr.innerHTML = `<td><strong>${t.task_name}</strong></td>`+
+                           `<td><span class='badge bg-primary'>${t.total_logs}</span></td>`+
+                           `<td><small>${t.first_data_date} → ${t.last_data_date}</small></td>`;
+            body.appendChild(tr);
+          });
+        }
+      } catch(e){
+        alert('Gagal memuat tasks: '+e.message);
+      }
+    }
+
+    async function previewBatch(){
+      const task = document.getElementById('task_name').value;
+      if(!task){ alert('Pilih task terlebih dahulu'); return; }
+      const payload = {
+        task_name: task,
+        start_date: document.getElementById('start_date').value || null,
+        end_date: document.getElementById('end_date').value || null,
+        preview: true
+      };
+      try {
+  const r = await fetch("{{ url_for('batch.run_batch') }}", {
+          method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)
+        });
+        const j = await r.json();
+        if(!j.success){ alert(j.message); return; }
+        renderPreview(j.columns, j.rows, j.total_rows);
+      } catch(e){ alert('Error preview: '+e.message); }
+    }
+
+    function renderPreview(cols, rows, total){
+      const thead = document.querySelector('#previewTable thead');
+      const tbody = document.querySelector('#previewTable tbody');
+      thead.innerHTML = '<tr>'+cols.map(c=>`<th>${c}</th>`).join('')+'</tr>';
+      tbody.innerHTML = rows.map(r => '<tr>'+r.map(cell => `<td>${cell}</td>`).join('')+'</tr>').join('');
+      document.getElementById('previewMeta').textContent = `Total rows: ${total}`;
+      document.getElementById('previewSection').style.display='block';
+    }
+
+    async function runBatch(e){
+      e.preventDefault();
+      const task = document.getElementById('task_name').value;
+      if(!task){ alert('Pilih task terlebih dahulu'); return; }
+      const payload = {
+        task_name: task,
+        start_date: document.getElementById('start_date').value || null,
+        end_date: document.getElementById('end_date').value || null,
+        format: document.getElementById('format').value
+      };
+      try {
+  const r = await fetch("{{ url_for('batch.run_batch') }}", {
+          method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)
+        });
+        if(r.status === 200){
+          // Force download
+          const blob = await r.blob();
+          const disposition = r.headers.get('Content-Disposition');
+          let filename = 'batch_download';
+          if(disposition){
+            const match = disposition.match(/filename="?([^";]+)"?/);
+            if(match) filename = match[1];
+          }
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url; a.download = filename; a.click();
+          URL.revokeObjectURL(url);
+        } else {
+          const j = await r.json();
+            alert(j.message || 'Batch gagal');
+        }
+      } catch(e){ alert('Error batch: '+e.message); }
+    }
+  </script>
+</body>
+</html>
