@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BPS Web Crawler - Scheduler</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px 0;
+        }
+        .container {
+            max-width: 1400px;
+        }
+        .card {
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+        }
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            padding: 20px;
+        }
+        .badge-status {
+            font-size: 0.85em;
+            padding: 5px 10px;
+        }
+        .job-card {
+            border-left: 4px solid #667eea;
+            margin-bottom: 15px;
+        }
+        .job-card.success {
+            border-left-color: #28a745;
+        }
+        .job-card.failed {
+            border-left-color: #dc3545;
+        }
+        .job-card.retrying {
+            border-left-color: #ffc107;
+        }
+        .btn-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+        }
+        .btn-gradient:hover {
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+            color: white;
+        }
+        .crawler-selector {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .crawler-option {
+            flex: 1;
+            padding: 20px;
+            border: 3px solid #e0e0e0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            background: white;
+        }
+        .crawler-option:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .crawler-option.active {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .crawler-option h4 {
+            margin: 10px 0 5px 0;
+        }
+        .crawler-option i {
+            font-size: 2em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="text-center text-white mb-4">
+            <h1><i class="bi bi-robot"></i> BPS Web Crawler</h1>
+            <p class="lead">Automated Data Crawling & Scheduler</p>
+        </div>
+
+        <!-- Crawler Selection -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-gear"></i> Pilih Crawler</h5>
+            </div>
+            <div class="card-body">
+                <div class="crawler-selector">
+                    <div class="crawler-option active" data-crawler="seruti" onclick="selectCrawler('seruti')">
+                        <i class="bi bi-database"></i>
+                        <h4>SERUTI</h4>
+                        <p class="mb-0 small">Survei Ekonomi Rumah Tangga Triwulanan</p>
+                    </div>
+                    <div class="crawler-option" data-crawler="susenas" onclick="selectCrawler('susenas')">
+                        <i class="bi bi-bar-chart"></i>
+                        <h4>SUSENAS</h4>
+                        <p class="mb-0 small">Survey Sosial Ekonomi Nasional</p>
+                    </div>
+                </div>
+                <input type="hidden" id="selectedCrawler" value="seruti">
+            </div>
+        </div>
+
+        <!-- Add New Schedule -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-calendar-plus"></i> Tambah Jadwal Crawling</h5>
+            </div>
+            <div class="card-body">
+                <form id="addJobForm">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Nama Jadwal</label>
+                            <input type="text" class="form-control" id="jobName" required
+                                   placeholder="Contoh: Crawl Pagi Hari">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Tanggal Mulai</label>
+                            <input type="date" class="form-control" id="startDate" required>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Tanggal Selesai</label>
+                            <input type="date" class="form-control" id="endDate" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label">Jam</label>
+                            <select class="form-select" id="jobHour" required>
+                                <option value="">--</option>
+                                <option value="0">00</option>
+                                <option value="1">01</option>
+                                <option value="2">02</option>
+                                <option value="3">03</option>
+                                <option value="4">04</option>
+                                <option value="5">05</option>
+                                <option value="6">06</option>
+                                <option value="7">07</option>
+                                <option value="8">08</option>
+                                <option value="9" selected>09</option>
+                                <option value="10">10</option>
+                                <option value="11">11</option>
+                                <option value="12">12</option>
+                                <option value="13">13</option>
+                                <option value="14">14</option>
+                                <option value="15">15</option>
+                                <option value="16">16</option>
+                                <option value="17">17</option>
+                                <option value="18">18</option>
+                                <option value="19">19</option>
+                                <option value="20">20</option>
+                                <option value="21">21</option>
+                                <option value="22">22</option>
+                                <option value="23">23</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label">Menit</label>
+                            <select class="form-select" id="jobMinute" required>
+                                <option value="">--</option>
+                                <option value="0">00</option>
+                                <option value="5" selected>05</option>
+                                <option value="10">10</option>
+                                <option value="15">15</option>
+                                <option value="20">20</option>
+                                <option value="25">25</option>
+                                <option value="30">30</option>
+                                <option value="35">35</option>
+                                <option value="40">40</option>
+                                <option value="45">45</option>
+                                <option value="50">50</option>
+                                <option value="55">55</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Max Retry Jika Gagal</label>
+                            <input type="number" class="form-control" id="maxRetries" 
+                                   value="3" min="0" max="10">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Delay Retry (detik)</label>
+                            <input type="number" class="form-control" id="retryDelay" 
+                                   value="300" min="60" step="60">
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <button type="submit" class="btn btn-gradient btn-lg">
+                            <i class="bi bi-calendar-plus"></i> Tambah Jadwal
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Scheduled Jobs List -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-list-task"></i> Daftar Jadwal Aktif</h5>
+                <button class="btn btn-light btn-sm" onclick="loadJobs()">
+                    <i class="bi bi-arrow-clockwise"></i> Refresh
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="jobsList">
+                    <div class="text-center text-muted">
+                        <i class="bi bi-hourglass-split"></i> Loading...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Download Log -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-file-earmark-text"></i> Download Log</h5>
+                <button class="btn btn-light btn-sm" onclick="loadDownloads()">
+                    <i class="bi bi-arrow-clockwise"></i> Refresh
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="downloadsList">
+                    <div class="text-center text-muted">
+                        <i class="bi bi-hourglass-split"></i> Loading...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Select crawler
+        function selectCrawler(type) {
+            document.querySelectorAll('.crawler-option').forEach(el => {
+                el.classList.remove('active');
+            });
+            document.querySelector(`[data-crawler="${type}"]`).classList.add('active');
+            document.getElementById('selectedCrawler').value = type;
+            console.log('Crawler selected:', type);  // Debug log
+        }
+
+        // Add job
+        document.getElementById('addJobForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const data = {
+                name: document.getElementById('jobName').value,
+                crawler_type: document.getElementById('selectedCrawler').value,
+                start_date: document.getElementById('startDate').value,
+                end_date: document.getElementById('endDate').value,
+                hour: parseInt(document.getElementById('jobHour').value),
+                minute: parseInt(document.getElementById('jobMinute').value),
+                max_retries: parseInt(document.getElementById('maxRetries').value),
+                retry_delay: parseInt(document.getElementById('retryDelay').value)
+            };
+
+            console.log('Sending job data:', data);  // Debug log
+
+            try {
+                const response = await fetch('/api/scheduler/job/add', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(result.message);
+                    // Simpan crawler type sebelum reset
+                    const currentCrawlerType = document.getElementById('selectedCrawler').value;
+                    e.target.reset();
+                    // Restore crawler type setelah reset
+                    document.getElementById('selectedCrawler').value = currentCrawlerType;
+                    // Update visual selector juga
+                    document.querySelectorAll('.crawler-option').forEach(el => {
+                        el.classList.remove('active');
+                    });
+                    document.querySelector(`[data-crawler="${currentCrawlerType}"]`).classList.add('active');
+                    // Restore default values
+                    document.getElementById('jobHour').value = '9';
+                    document.getElementById('jobMinute').value = '5';
+                    loadJobs();
+                } else {
+                    alert('Error: ' + result.message);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        });
+
+        // Load jobs
+        async function loadJobs() {
+            try {
+                const response = await fetch('/api/scheduler/jobs');
+                const result = await response.json();
+                
+                const jobsList = document.getElementById('jobsList');
+                
+                if (result.jobs && result.jobs.length > 0) {
+                    jobsList.innerHTML = `
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Nama Job</th>
+                                        <th>Crawler</th>
+                                        <th>Status</th>
+                                        <th>Periode</th>
+                                        <th>Waktu</th>
+                                        <th>Next Run</th>
+                                        <th>Last Run</th>
+                                        <th>Message</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${result.jobs.map(job => {
+                                        // Status badge
+                                        let statusBadge = '';
+                                        if (job.status === 'success' || job.status === 'skipped') {
+                                            statusBadge = '<span class="badge bg-success">Success</span>';
+                                        } else if (job.status === 'failed') {
+                                            statusBadge = '<span class="badge bg-danger">Failed</span>';
+                                        } else if (job.status === 'retrying') {
+                                            statusBadge = '<span class="badge bg-warning text-dark">Retrying</span>';
+                                        } else if (job.status === 'cancelled') {
+                                            statusBadge = '<span class="badge bg-secondary">Cancelled</span>';
+                                        } else if (job.status === 'completed') {
+                                            statusBadge = '<span class="badge bg-info">Completed</span>';
+                                        } else if (job.is_active) {
+                                            statusBadge = '<span class="badge bg-primary">Active</span>';
+                                        } else {
+                                            statusBadge = '<span class="badge bg-secondary">Inactive</span>';
+                                        }
+                                        
+                                        // Crawler badge
+                                        const crawlerType = job.crawler_type || 'seruti';
+                                        const crawlerBadge = crawlerType === 'seruti' ? 
+                                            '<span class="badge bg-primary">SERUTI</span>' :
+                                            '<span class="badge bg-info">SUSENAS</span>';
+                                        
+                                        // Action button
+                                        const actionButton = job.is_active ? 
+                                            `<button class="btn btn-danger btn-sm" onclick="deleteJob('${job.id}')">
+                                                <i class="bi bi-x-circle"></i> Cancel
+                                            </button>` :
+                                            `<button class="btn btn-secondary btn-sm" disabled>
+                                                <i class="bi bi-archive"></i> Archived
+                                            </button>`;
+                                        
+                                        return `
+                                            <tr>
+                                                <td><strong>${job.name}</strong></td>
+                                                <td>${crawlerBadge}</td>
+                                                <td>${statusBadge}</td>
+                                                <td>
+                                                    <small class="text-muted">
+                                                        <i class="bi bi-calendar-range"></i>
+                                                        ${job.start_date}<br>s/d ${job.end_date}
+                                                    </small>
+                                                </td>
+                                                <td>
+                                                    <i class="bi bi-clock"></i>
+                                                    ${String(job.hour).padStart(2, '0')}:${String(job.minute).padStart(2, '0')}
+                                                </td>
+                                                <td>
+                                                    ${job.next_run ? 
+                                                        `<small class="text-success">
+                                                            <i class="bi bi-play-circle"></i>
+                                                            ${job.next_run}
+                                                        </small>` : 
+                                                        '<span class="text-muted">-</span>'
+                                                    }
+                                                </td>
+                                                <td>
+                                                    ${job.last_run ? 
+                                                        `<small class="text-muted">
+                                                            <i class="bi bi-calendar-check"></i>
+                                                            ${job.last_run}
+                                                        </small>` : 
+                                                        '<span class="text-muted">-</span>'
+                                                    }
+                                                </td>
+                                                <td>
+                                                    ${job.last_message ? 
+                                                        `<small class="text-muted" title="${job.last_message}">
+                                                            ${job.last_message.substring(0, 30)}${job.last_message.length > 30 ? '...' : ''}
+                                                        </small>` : 
+                                                        '<span class="text-muted">-</span>'
+                                                    }
+                                                </td>
+                                                <td>${actionButton}</td>
+                                            </tr>
+                                        `;
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                } else {
+                    jobsList.innerHTML = `
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                            <p class="mt-2">Belum ada jadwal yang dibuat</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading jobs:', error);
+                document.getElementById('jobsList').innerHTML = `
+                    <div class="alert alert-danger">
+                        Error loading jobs: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // Delete job
+        async function deleteJob(jobId) {
+            if (!confirm('Hapus jadwal ini?')) return;
+            
+            try {
+                const response = await fetch(`/api/scheduler/job/${jobId}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(result.message);
+                    loadJobs();
+                } else {
+                    alert('Error: ' + result.message);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        // Load downloads
+        async function loadDownloads() {
+            try {
+                const response = await fetch('/api/downloads');
+                const result = await response.json();
+                
+                const downloadsList = document.getElementById('downloadsList');
+                
+                if (result.logs && result.logs.length > 0) {
+                    downloadsList.innerHTML = `
+                        <div class="table-responsive">
+                            <table class="table table-hover table-sm align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Filename</th>
+                                        <th>Task Name</th>
+                                        <th>Source</th>
+                                        <th>Data Date</th>
+                                        <th>Downloaded</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${result.logs.map(log => {
+                                        const sourceBadge = log.source === 'SerutiCrawler' ? 
+                                            '<span class="badge bg-primary">SERUTI</span>' :
+                                            log.source === 'SusenasCrawler' ?
+                                            '<span class="badge bg-info">SUSENAS</span>' :
+                                            '<span class="badge bg-secondary">' + log.source + '</span>';
+                                        
+                                        const taskBadge = log.task_name === 'Manual' ?
+                                            '<span class="badge bg-secondary"><i class="bi bi-person"></i> Manual</span>' :
+                                            '<span class="badge bg-success"><i class="bi bi-robot"></i> ' + log.task_name + '</span>';
+                                        
+                                        return `
+                                            <tr>
+                                                <td>
+                                                    <i class="bi bi-file-earmark-excel text-success"></i> 
+                                                    <strong>${log.filename}</strong>
+                                                </td>
+                                                <td>${taskBadge}</td>
+                                                <td>${sourceBadge}</td>
+                                                <td>
+                                                    <small class="text-muted">
+                                                        <i class="bi bi-calendar-event"></i> ${log.data_date}
+                                                    </small>
+                                                </td>
+                                                <td>
+                                                    <small class="text-muted">
+                                                        <i class="bi bi-clock"></i> ${log.downloaded}
+                                                    </small>
+                                                </td>
+                                            </tr>
+                                        `;
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                } else {
+                    downloadsList.innerHTML = `
+                        <div class="text-center text-muted">
+                            <i class="bi bi-inbox"></i>
+                            <p>Belum ada file yang didownload</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading downloads:', error);
+                document.getElementById('downloadsList').innerHTML = `
+                    <div class="alert alert-danger">
+                        Error loading downloads: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // Set default dates
+        const today = new Date();
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const nextMonth = new Date(today);
+        nextMonth.setMonth(nextMonth.getMonth() + 1);
+
+        document.getElementById('startDate').value = tomorrow.toISOString().split('T')[0];
+        document.getElementById('endDate').value = nextMonth.toISOString().split('T')[0];
+
+        // Initial load
+        loadJobs();
+        loadDownloads();
+
+        // Auto refresh every 30 seconds
+        setInterval(() => {
+            loadJobs();
+            loadDownloads();
+        }, 30000);
+    </script>
+</body>
+</html>

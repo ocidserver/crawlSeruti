@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Scheduler - Seruti Crawler</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px 0;
+        }
+        .container {
+            max-width: 1200px;
+        }
+        .card {
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+        }
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            padding: 20px;
+        }
+        .badge-status {
+            font-size: 0.85em;
+            padding: 5px 10px;
+        }
+        .job-card {
+            border-left: 4px solid #667eea;
+            margin-bottom: 15px;
+        }
+        .job-card.success {
+            border-left-color: #28a745;
+        }
+        .job-card.failed {
+            border-left-color: #dc3545;
+        }
+        .job-card.retrying {
+            border-left-color: #ffc107;
+        }
+        .btn-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+        }
+        .btn-gradient:hover {
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="text-center text-white mb-4">
+            <h1><i class="bi bi-calendar-check"></i> Task Scheduler</h1>
+            <p class="lead">Kelola Jadwal Crawling Otomatis</p>
+        </div>
+
+        <!-- Add New Job Card -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-plus-circle"></i> Tambah Jadwal Baru</h5>
+            </div>
+            <div class="card-body">
+                <form id="addJobForm">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Nama Jadwal</label>
+                            <input type="text" class="form-control" id="jobName" required
+                                   placeholder="Contoh: Crawl Pagi Hari">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Tanggal Mulai</label>
+                            <input type="date" class="form-control" id="startDate" required>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Tanggal Selesai</label>
+                            <input type="date" class="form-control" id="endDate" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label">Jam</label>
+                            <select class="form-select" id="jobHour" required>
+                                <option value="">--</option>
+                                <option value="0">00</option>
+                                <option value="1">01</option>
+                                <option value="2">02</option>
+                                <option value="3">03</option>
+                                <option value="4">04</option>
+                                <option value="5">05</option>
+                                <option value="6">06</option>
+                                <option value="7">07</option>
+                                <option value="8">08</option>
+                                <option value="9" selected>09</option>
+                                <option value="10">10</option>
+                                <option value="11">11</option>
+                                <option value="12">12</option>
+                                <option value="13">13</option>
+                                <option value="14">14</option>
+                                <option value="15">15</option>
+                                <option value="16">16</option>
+                                <option value="17">17</option>
+                                <option value="18">18</option>
+                                <option value="19">19</option>
+                                <option value="20">20</option>
+                                <option value="21">21</option>
+                                <option value="22">22</option>
+                                <option value="23">23</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label">Menit</label>
+                            <select class="form-select" id="jobMinute" required>
+                                <option value="">--</option>
+                                <option value="0">00</option>
+                                <option value="5" selected>05</option>
+                                <option value="10">10</option>
+                                <option value="15">15</option>
+                                <option value="20">20</option>
+                                <option value="25">25</option>
+                                <option value="30">30</option>
+                                <option value="35">35</option>
+                                <option value="40">40</option>
+                                <option value="45">45</option>
+                                <option value="50">50</option>
+                                <option value="55">55</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Max Retry Jika Gagal</label>
+                            <input type="number" class="form-control" id="maxRetries" 
+                                   value="3" min="0" max="10">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Delay Retry (detik)</label>
+                            <input type="number" class="form-control" id="retryDelay" 
+                                   value="300" min="60" step="60">
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <button type="submit" class="btn btn-gradient">
+                            <i class="bi bi-calendar-plus"></i> Tambah Jadwal
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Active Jobs List -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-list-task"></i> Daftar Jadwal Aktif</h5>
+                <button class="btn btn-light btn-sm" onclick="loadJobs()">
+                    <i class="bi bi-arrow-clockwise"></i> Refresh
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="jobsList">
+                    <div class="text-center text-muted">
+                        <i class="bi bi-hourglass-split fs-1"></i>
+                        <p>Memuat data...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Back to Home -->
+        <div class="text-center">
+            <a href="/" class="btn btn-light">
+                <i class="bi bi-house"></i> Kembali ke Home
+            </a>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Konfirmasi Hapus</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    Apakah Anda yakin ingin menghapus jadwal ini?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-danger" id="confirmDelete">
+                        <i class="bi bi-trash"></i> Hapus
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let deleteJobId = null;
+        const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+
+        // Set default dates
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const nextMonth = new Date(today);
+            nextMonth.setMonth(nextMonth.getMonth() + 1);
+
+            document.getElementById('startDate').valueAsDate = tomorrow;
+            document.getElementById('endDate').valueAsDate = nextMonth;
+
+            loadJobs();
+        });
+
+        // Add Job Form Submit
+        document.getElementById('addJobForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const jobData = {
+                name: document.getElementById('jobName').value,
+                start_date: document.getElementById('startDate').value,
+                end_date: document.getElementById('endDate').value,
+                hour: parseInt(document.getElementById('jobHour').value),
+                minute: parseInt(document.getElementById('jobMinute').value),
+                max_retries: parseInt(document.getElementById('maxRetries').value),
+                retry_delay: parseInt(document.getElementById('retryDelay').value)
+            };
+
+            try {
+                const response = await fetch('/api/scheduler/job/add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(jobData)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert(result.message);
+                    document.getElementById('addJobForm').reset();
+                    document.getElementById('jobHour').value = '9';
+                    document.getElementById('jobMinute').value = '5';
+                    loadJobs();
+                } else {
+                    alert('Error: ' + result.message);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        });
+
+        // Load Jobs List
+        async function loadJobs() {
+            try {
+                const response = await fetch('/api/scheduler/jobs');
+                const result = await response.json();
+
+                if (result.success && result.jobs.length > 0) {
+                    displayJobs(result.jobs);
+                } else {
+                    document.getElementById('jobsList').innerHTML = `
+                        <div class="text-center text-muted">
+                            <i class="bi bi-inbox fs-1"></i>
+                            <p>Belum ada jadwal aktif</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('jobsList').innerHTML = `
+                    <div class="alert alert-danger">
+                        Error loading jobs: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // Display Jobs
+        function displayJobs(jobs) {
+            const html = jobs.map(job => {
+                const statusClass = job.status || 'active';
+                const statusBadge = getStatusBadge(job.status);
+                const nextRun = job.next_run || 'N/A';
+                const lastRun = job.last_run || 'Belum pernah';
+                const lastMessage = job.last_message || '-';
+
+                return `
+                    <div class="card job-card ${statusClass}">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h5 class="card-title">
+                                        <i class="bi bi-calendar-event"></i> ${job.name}
+                                        ${statusBadge}
+                                    </h5>
+                                    <p class="mb-1">
+                                        <i class="bi bi-clock"></i> 
+                                        <strong>Jadwal:</strong> ${job.schedule} 
+                                        (${job.start_date} s/d ${job.end_date})
+                                    </p>
+                                    <p class="mb-1">
+                                        <i class="bi bi-calendar-check"></i> 
+                                        <strong>Next Run:</strong> ${nextRun}
+                                    </p>
+                                    <p class="mb-1">
+                                        <i class="bi bi-clock-history"></i> 
+                                        <strong>Last Run:</strong> ${lastRun}
+                                    </p>
+                                    <p class="mb-1">
+                                        <i class="bi bi-arrow-repeat"></i> 
+                                        <strong>Retry:</strong> Max ${job.max_retries || 3}x, 
+                                        Delay ${job.retry_delay || 300}s
+                                    </p>
+                                    ${lastMessage !== '-' ? `
+                                        <p class="mb-0 text-muted small">
+                                            <i class="bi bi-info-circle"></i> ${lastMessage}
+                                        </p>
+                                    ` : ''}
+                                </div>
+                                <div>
+                                    <button class="btn btn-sm btn-danger" onclick="confirmDeleteJob('${job.id}')">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('jobsList').innerHTML = html;
+        }
+
+        // Get Status Badge
+        function getStatusBadge(status) {
+            const badges = {
+                'active': '<span class="badge bg-primary badge-status">Active</span>',
+                'success': '<span class="badge bg-success badge-status">Success</span>',
+                'failed': '<span class="badge bg-danger badge-status">Failed</span>',
+                'retrying': '<span class="badge bg-warning badge-status">Retrying</span>'
+            };
+            return badges[status] || '<span class="badge bg-secondary badge-status">Unknown</span>';
+        }
+
+        // Confirm Delete Job
+        function confirmDeleteJob(jobId) {
+            deleteJobId = jobId;
+            deleteModal.show();
+        }
+
+        // Delete Job
+        document.getElementById('confirmDelete').addEventListener('click', async function() {
+            if (!deleteJobId) return;
+
+            try {
+                const response = await fetch(`/api/scheduler/job/${deleteJobId}`, {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert(result.message);
+                    deleteModal.hide();
+                    loadJobs();
+                } else {
+                    alert('Error: ' + result.message);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+
+            deleteJobId = null;
+        });
+
+        // Auto refresh every 30 seconds
+        setInterval(loadJobs, 30000);
+    </script>
+</body>
+</html>
