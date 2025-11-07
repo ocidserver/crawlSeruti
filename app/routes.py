@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request, jsonify, send_file
 from app.crawlers import get_crawler
 from app.config import Config
 from app.scheduler import scheduler_instance
+from app.auth import login_required
 import os
 import logging
 from datetime import datetime
@@ -9,6 +10,7 @@ from datetime import datetime
 main_bp = Blueprint('main', __name__)
 
 @main_bp.route('/')
+@login_required
 def index():
     """Render halaman utama"""
     return render_template('index.html')

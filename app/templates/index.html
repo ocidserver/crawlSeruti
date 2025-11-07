@@ -87,10 +87,46 @@
 </head>
 <body>
     <div class="container">
-        <!-- Header -->
-        <div class="text-center text-white mb-4">
-            <h1><i class="bi bi-robot"></i> BPS Web Crawler</h1>
-            <p class="lead">Automated Data Crawling & Scheduler</p>
+        <!-- Header with User Menu -->
+        <div class="d-flex justify-content-between align-items-center text-white mb-4">
+            <div class="text-start">
+                <h1><i class="bi bi-robot"></i> BPS Web Crawler</h1>
+                <p class="lead mb-0">Automated Data Crawling & Scheduler</p>
+            </div>
+            <div class="dropdown">
+                <button class="btn btn-light dropdown-toggle" type="button" id="userMenu" data-bs-toggle="dropdown">
+                    <i class="bi bi-person-circle me-2"></i>
+                    {{ session.full_name or session.username }}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><h6 class="dropdown-header">
+                        <i class="bi bi-person-badge me-2"></i>{{ session.username }}
+                        <br><small class="text-muted">{{ session.role|upper }}</small>
+                    </h6></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="{{ url_for('auth.profile') }}">
+                        <i class="bi bi-person me-2"></i>Profile
+                    </a></li>
+                    {% if session.role == 'admin' %}
+                    <li><a class="dropdown-item" href="{{ url_for('management.index') }}">
+                        <i class="bi bi-gear me-2"></i>Management
+                    </a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('management.users') }}">
+                        <i class="bi bi-people me-2"></i>Users
+                    </a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('management.settings') }}">
+                        <i class="bi bi-sliders me-2"></i>Settings
+                    </a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('management.system') }}">
+                        <i class="bi bi-hdd me-2"></i>System Info
+                    </a></li>
+                    {% endif %}
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}">
+                        <i class="bi bi-box-arrow-right me-2"></i>Logout
+                    </a></li>
+                </ul>
+            </div>
         </div>
 
         <!-- Crawler Selection -->

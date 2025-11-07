@@ -20,7 +20,15 @@ Automated web crawler system untuk BPS dengan support multiple crawlers (Seruti 
 - ✅ **SQLite Database** - ACID-compliant data storage
 - ✅ **Headless Mode** - Background execution tanpa GUI
 
-### 📊 Management Features
+### � Security & Management
+
+- ✅ **Login System** - User authentication dengan session management
+- ✅ **User Management** - CRUD operations untuk user (admin only)
+- ✅ **Role-Based Access** - User & Admin roles
+- ✅ **Settings Management** - Konfigurasi aplikasi via web UI
+- ✅ **System Monitoring** - Resource usage & system information
+
+### 📊 Dashboard Features
 
 - ✅ **Job History** - Track semua jobs (active, completed, cancelled, failed)
 - ✅ **Download Log** - Complete download tracking dengan task name
@@ -33,7 +41,8 @@ Automated web crawler system untuk BPS dengan support multiple crawlers (Seruti 
 - ✅ **Transaction Safety** - No data loss saat system crash
 - ✅ **Data Validation** - Check duplicate sebelum download
 - ✅ **Environment Variables** - Secure credential management
-- ✅ **Backup System** - Auto backup saat migration
+- ✅ **Backup System** - Auto backup database via web UI
+- ✅ **Password Hashing** - Secure password storage dengan Werkzeug
 
 ---
 
@@ -87,6 +96,20 @@ HEADLESS_MODE=True
 # Open browser: http://localhost:5000
 ```
 
+### 4. First Login
+
+```
+Default Admin Account:
+Username: admin
+Password: admin123
+```
+
+**⚠️ PENTING:** Ubah password default segera setelah login pertama!
+
+1. Login dengan akun default
+2. Klik user menu → Profile
+3. Ubah password di form "Ubah Password"
+
 ---
 
 ## 📖 Documentation
@@ -94,6 +117,7 @@ HEADLESS_MODE=True
 ### 📚 User Guides
 
 - [Getting Started Guide](docs/GETTING_STARTED.md) - Panduan lengkap untuk pemula
+- [Login & Management](docs/LOGIN_MANAGEMENT.md) - **NEW!** Panduan sistem login & manajemen
 - [Seruti Crawler Guide](docs/SERUTI_GUIDE.md) - Panduan crawler Seruti
 - [Susenas Crawler Guide](docs/SUSENAS_GUIDE.md) - Panduan crawler Susenas
 - [Scheduler Guide](docs/SCHEDULER_GUIDE.md) - Panduan task scheduler

@@ -42,33 +42,33 @@ CREATE TABLE scheduled_jobs (
 
 #### Columns
 
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| id | TEXT | PRIMARY KEY | Unique job ID (format: job_YYYYMMDDHHmmss) |
-| name | TEXT | NOT NULL | Human-readable job name |
-| crawler_type | TEXT | NOT NULL | Crawler type: 'seruti' or 'susenas' |
-| start_date | TEXT | NOT NULL | Job start date (YYYY-MM-DD) |
-| end_date | TEXT | NOT NULL | Job end date (YYYY-MM-DD) |
-| hour | INTEGER | NOT NULL | Execution hour (0-23) |
-| minute | INTEGER | NOT NULL | Execution minute (0-59) |
-| max_retries | INTEGER | DEFAULT 3 | Maximum retry attempts |
-| retry_delay | INTEGER | DEFAULT 300 | Delay between retries (seconds) |
-| status | TEXT | DEFAULT 'active' | Job status (see statuses below) |
-| created_at | TEXT | NOT NULL | Job creation timestamp |
-| last_run | TEXT | NULL | Last execution timestamp |
-| last_message | TEXT | NULL | Last execution message |
+| Column       | Type    | Constraints      | Description                                |
+| ------------ | ------- | ---------------- | ------------------------------------------ |
+| id           | TEXT    | PRIMARY KEY      | Unique job ID (format: job_YYYYMMDDHHmmss) |
+| name         | TEXT    | NOT NULL         | Human-readable job name                    |
+| crawler_type | TEXT    | NOT NULL         | Crawler type: 'seruti' or 'susenas'        |
+| start_date   | TEXT    | NOT NULL         | Job start date (YYYY-MM-DD)                |
+| end_date     | TEXT    | NOT NULL         | Job end date (YYYY-MM-DD)                  |
+| hour         | INTEGER | NOT NULL         | Execution hour (0-23)                      |
+| minute       | INTEGER | NOT NULL         | Execution minute (0-59)                    |
+| max_retries  | INTEGER | DEFAULT 3        | Maximum retry attempts                     |
+| retry_delay  | INTEGER | DEFAULT 300      | Delay between retries (seconds)            |
+| status       | TEXT    | DEFAULT 'active' | Job status (see statuses below)            |
+| created_at   | TEXT    | NOT NULL         | Job creation timestamp                     |
+| last_run     | TEXT    | NULL             | Last execution timestamp                   |
+| last_message | TEXT    | NULL             | Last execution message                     |
 
 #### Status Values
 
-| Status | Description |
-|--------|-------------|
-| active | Job is scheduled and running |
-| success | Last run was successful |
-| skipped | Last run was skipped (data exists) |
-| failed | Job failed after max retries |
-| retrying | Job is currently retrying |
-| cancelled | Job was cancelled by user |
-| completed | Job period has ended |
+| Status    | Description                        |
+| --------- | ---------------------------------- |
+| active    | Job is scheduled and running       |
+| success   | Last run was successful            |
+| skipped   | Last run was skipped (data exists) |
+| failed    | Job failed after max retries       |
+| retrying  | Job is currently retrying          |
+| cancelled | Job was cancelled by user          |
+| completed | Job period has ended               |
 
 #### Indexes
 
@@ -79,30 +79,34 @@ CREATE INDEX idx_jobs_status ON scheduled_jobs(status);
 #### Example Queries
 
 **Get all active jobs:**
+
 ```sql
-SELECT * FROM scheduled_jobs 
-WHERE status = 'active' 
+SELECT * FROM scheduled_jobs
+WHERE status = 'active'
 ORDER BY created_at DESC;
 ```
 
 **Get jobs by crawler type:**
+
 ```sql
-SELECT * FROM scheduled_jobs 
-WHERE crawler_type = 'seruti' 
+SELECT * FROM scheduled_jobs
+WHERE crawler_type = 'seruti'
 ORDER BY hour, minute;
 ```
 
 **Get failed jobs:**
+
 ```sql
-SELECT id, name, last_message 
-FROM scheduled_jobs 
+SELECT id, name, last_message
+FROM scheduled_jobs
 WHERE status = 'failed';
 ```
 
 **Count jobs by status:**
+
 ```sql
-SELECT status, COUNT(*) as count 
-FROM scheduled_jobs 
+SELECT status, COUNT(*) as count
+FROM scheduled_jobs
 GROUP BY status;
 ```
 
@@ -128,15 +132,15 @@ CREATE TABLE download_logs (
 
 #### Columns
 
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| id | INTEGER | PRIMARY KEY AUTO | Unique log ID |
-| nama_file | TEXT | NOT NULL | Downloaded file name |
-| tanggal_download | TEXT | NOT NULL | Download timestamp (YYYY-MM-DD HH:MM:SS) |
-| laman_web | TEXT | NOT NULL | Crawler source (SerutiCrawler/SusenasCrawler) |
-| data_tanggal | TEXT | NULL | Date of data in file (YYYY-MM-DD) |
-| task_name | TEXT | DEFAULT 'Manual' | Task name or 'Manual' |
-| created_at | TEXT | DEFAULT NOW | Record creation timestamp |
+| Column           | Type    | Constraints      | Description                                   |
+| ---------------- | ------- | ---------------- | --------------------------------------------- |
+| id               | INTEGER | PRIMARY KEY AUTO | Unique log ID                                 |
+| nama_file        | TEXT    | NOT NULL         | Downloaded file name                          |
+| tanggal_download | TEXT    | NOT NULL         | Download timestamp (YYYY-MM-DD HH:MM:SS)      |
+| laman_web        | TEXT    | NOT NULL         | Crawler source (SerutiCrawler/SusenasCrawler) |
+| data_tanggal     | TEXT    | NULL             | Date of data in file (YYYY-MM-DD)             |
+| task_name        | TEXT    | DEFAULT 'Manual' | Task name or 'Manual'                         |
+| created_at       | TEXT    | DEFAULT NOW      | Record creation timestamp                     |
 
 #### Indexes
 
@@ -148,50 +152,56 @@ CREATE INDEX idx_logs_date ON download_logs(tanggal_download);
 #### Example Queries
 
 **Get recent downloads:**
+
 ```sql
-SELECT * FROM download_logs 
-ORDER BY tanggal_download DESC 
+SELECT * FROM download_logs
+ORDER BY tanggal_download DESC
 LIMIT 10;
 ```
 
 **Check if data exists:**
+
 ```sql
-SELECT COUNT(*) as exists 
-FROM download_logs 
-WHERE laman_web = 'SerutiCrawler' 
+SELECT COUNT(*) as exists
+FROM download_logs
+WHERE laman_web = 'SerutiCrawler'
   AND data_tanggal = '2025-11-07';
 ```
 
 **Get downloads by task:**
+
 ```sql
-SELECT * FROM download_logs 
-WHERE task_name = 'Daily Seruti Crawl' 
+SELECT * FROM download_logs
+WHERE task_name = 'Daily Seruti Crawl'
 ORDER BY tanggal_download DESC;
 ```
 
 **Get download statistics:**
+
 ```sql
-SELECT 
+SELECT
     laman_web,
     COUNT(*) as total_downloads,
     MAX(tanggal_download) as last_download
-FROM download_logs 
+FROM download_logs
 GROUP BY laman_web;
 ```
 
 **Get downloads by date range:**
+
 ```sql
-SELECT * FROM download_logs 
+SELECT * FROM download_logs
 WHERE tanggal_download BETWEEN '2025-11-01' AND '2025-11-30'
 ORDER BY tanggal_download DESC;
 ```
 
 **Manual vs Scheduled downloads:**
+
 ```sql
-SELECT 
+SELECT
     CASE WHEN task_name = 'Manual' THEN 'Manual' ELSE 'Scheduled' END as type,
     COUNT(*) as count
-FROM download_logs 
+FROM download_logs
 GROUP BY type;
 ```
 
@@ -308,16 +318,16 @@ PRAGMA integrity_check;
 
 ```sql
 -- Database page count and size
-SELECT page_count * page_size as size 
+SELECT page_count * page_size as size
 FROM pragma_page_count(), pragma_page_size();
 
 -- Table sizes
-SELECT name, 
+SELECT name,
        SUM(pgsize) as size_bytes,
        SUM(pgsize)/1024 as size_kb,
        SUM(pgsize)/1024/1024 as size_mb
-FROM dbstat 
-GROUP BY name 
+FROM dbstat
+GROUP BY name
 ORDER BY size_bytes DESC;
 ```
 
@@ -446,8 +456,8 @@ with db.get_connection() as conn:
 SELECT * FROM scheduled_jobs WHERE status = 'active';
 
 -- Good: Uses index
-SELECT * FROM download_logs 
-WHERE laman_web = 'SerutiCrawler' 
+SELECT * FROM download_logs
+WHERE laman_web = 'SerutiCrawler'
   AND data_tanggal = '2025-11-08';
 
 -- Bad: Full table scan
@@ -458,8 +468,8 @@ SELECT * FROM scheduled_jobs WHERE name LIKE '%crawl%';
 
 ```sql
 -- Always use LIMIT for large datasets
-SELECT * FROM download_logs 
-ORDER BY tanggal_download DESC 
+SELECT * FROM download_logs
+ORDER BY tanggal_download DESC
 LIMIT 100;
 ```
 
@@ -475,7 +485,7 @@ Copy-Item crawler.db "backups\crawler_$date.db"
 
 ```sql
 -- Check database size regularly
-SELECT page_count * page_size / 1024 / 1024 as size_mb 
+SELECT page_count * page_size / 1024 / 1024 as size_mb
 FROM pragma_page_count(), pragma_page_size();
 ```
 
@@ -488,6 +498,7 @@ FROM pragma_page_count(), pragma_page_size();
 **Problem:** `sqlite3.OperationalError: database is locked`
 
 **Solution:**
+
 ```bash
 # Stop all connections
 # Wait a few seconds
@@ -499,6 +510,7 @@ FROM pragma_page_count(), pragma_page_size();
 **Problem:** Database corrupted
 
 **Solution:**
+
 ```bash
 # Check integrity
 sqlite3 crawler.db "PRAGMA integrity_check;"
@@ -512,9 +524,10 @@ Copy-Item crawler_backup.db crawler.db
 **Problem:** Queries taking too long
 
 **Solution:**
+
 ```sql
 -- Analyze query plan
-EXPLAIN QUERY PLAN 
+EXPLAIN QUERY PLAN
 SELECT * FROM scheduled_jobs WHERE status = 'active';
 
 -- Rebuild indexes
@@ -533,6 +546,7 @@ VACUUM;
 **Download:** https://sqlitebrowser.org/
 
 **Features:**
+
 - Visual table browser
 - Query editor
 - Schema designer

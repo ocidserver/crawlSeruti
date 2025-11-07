@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management - BPS Web Crawler</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px 0;
+        }
+        .card {
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+        }
+        .table-responsive {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .btn-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" style="max-width: 1200px;">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="text-white">
+                <i class="bi bi-people-fill me-2"></i>
+                User Management
+            </h2>
+            <a href="{{ url_for('management.index') }}" class="btn btn-light">
+                <i class="bi bi-arrow-left me-2"></i>Kembali
+            </a>
+        </div>
+        
+        <!-- User List Card -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-list-ul me-2"></i>
+                    Daftar User
+                </h5>
+                <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                    <i class="bi bi-plus-circle me-2"></i>
+                    Tambah User
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>ID</th>
+                                <th>Username</th>
+                                <th>Nama Lengkap</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th>Login Terakhir</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users %}
+                            <tr>
+                                <td>{{ user.id }}</td>
+                                <td><strong>{{ user.username }}</strong></td>
+                                <td>{{ user.full_name or '-' }}</td>
+                                <td>{{ user.email or '-' }}</td>
+                                <td>
+                                    <span class="badge bg-{% if user.role == 'admin' %}danger{% else %}primary{% endif %}">
+                                        {{ user.role|upper }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if user.is_active %}
+                                        <span class="badge bg-success">Active</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Inactive</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small>{{ user.last_login[:19] if user.last_login else '-' }}</small>
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-warning" onclick="editUser({{ user|tojson }})">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-info" onclick="resetPassword({{ user.id }}, '{{ user.username }}')">
+                                        <i class="bi bi-key"></i>
+                                    </button>
+                                    {% if user.username != 'admin' %}
+                                    <button class="btn btn-sm btn-danger" onclick="deleteUser({{ user.id }}, '{{ user.username }}')">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add User Modal -->
+    <div class="modal fade" id="addUserModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-person-plus me-2"></i>
+                        Tambah User Baru
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addUserForm">
+                        <div class="mb-3">
+                            <label for="add_username" class="form-label">Username *</label>
+                            <input type="text" class="form-control" id="add_username" name="username" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="add_password" class="form-label">Password *</label>
+                            <input type="password" class="form-control" id="add_password" name="password" required minlength="6">
+                            <small class="text-muted">Minimal 6 karakter</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="add_full_name" class="form-label">Nama Lengkap</label>
+                            <input type="text" class="form-control" id="add_full_name" name="full_name">
+                        </div>
+                        <div class="mb-3">
+                            <label for="add_email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="add_email" name="email">
+                        </div>
+                        <div class="mb-3">
+                            <label for="add_role" class="form-label">Role *</label>
+                            <select class="form-select" id="add_role" name="role" required>
+                                <option value="user">User</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-gradient" onclick="submitAddUser()">Tambah User</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Edit User Modal -->
+    <div class="modal fade" id="editUserModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-pencil me-2"></i>
+                        Edit User
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editUserForm">
+                        <input type="hidden" id="edit_user_id" name="user_id">
+                        <div class="mb-3">
+                            <label class="form-label">Username</label>
+                            <input type="text" class="form-control" id="edit_username" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit_full_name" class="form-label">Nama Lengkap</label>
+                            <input type="text" class="form-control" id="edit_full_name" name="full_name">
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit_email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="edit_email" name="email">
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit_role" class="form-label">Role</label>
+                            <select class="form-select" id="edit_role" name="role">
+                                <option value="user">User</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit_is_active" class="form-label">Status</label>
+                            <select class="form-select" id="edit_is_active" name="is_active">
+                                <option value="1">Active</option>
+                                <option value="0">Inactive</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-gradient" onclick="submitEditUser()">Update</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        async function submitAddUser() {
+            const form = document.getElementById('addUserForm');
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData);
+            
+            try {
+                const response = await fetch('{{ url_for("management.create_user") }}', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                alert(result.message);
+                
+                if (result.success) {
+                    location.reload();
+                }
+            } catch (error) {
+                alert('Terjadi kesalahan: ' + error.message);
+            }
+        }
+        
+        function editUser(user) {
+            document.getElementById('edit_user_id').value = user.id;
+            document.getElementById('edit_username').value = user.username;
+            document.getElementById('edit_full_name').value = user.full_name || '';
+            document.getElementById('edit_email').value = user.email || '';
+            document.getElementById('edit_role').value = user.role;
+            document.getElementById('edit_is_active').value = user.is_active;
+            
+            new bootstrap.Modal(document.getElementById('editUserModal')).show();
+        }
+        
+        async function submitEditUser() {
+            const userId = document.getElementById('edit_user_id').value;
+            const form = document.getElementById('editUserForm');
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData);
+            delete data.user_id;
+            
+            try {
+                const response = await fetch(`{{ url_for("management.update_user", user_id=0) }}`.replace('/0', `/${userId}`), {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                alert(result.message);
+                
+                if (result.success) {
+                    location.reload();
+                }
+            } catch (error) {
+                alert('Terjadi kesalahan: ' + error.message);
+            }
+        }
+        
+        async function resetPassword(userId, username) {
+            const newPassword = prompt(`Reset password untuk ${username}?\n\nMasukkan password baru (minimal 6 karakter):`);
+            
+            if (!newPassword || newPassword.length < 6) {
+                alert('Password minimal 6 karakter!');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`{{ url_for("management.reset_user_password", user_id=0) }}`.replace('/0', `/${userId}`), {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({password: newPassword})
+                });
+                
+                const result = await response.json();
+                alert(result.message);
+            } catch (error) {
+                alert('Terjadi kesalahan: ' + error.message);
+            }
+        }
+        
+        async function deleteUser(userId, username) {
+            if (!confirm(`Hapus user ${username}?`)) return;
+            
+            try {
+                const response = await fetch(`{{ url_for("management.delete_user", user_id=0) }}`.replace('/0', `/${userId}`), {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                alert(result.message);
+                
+                if (result.success) {
+                    location.reload();
+                }
+            } catch (error) {
+                alert('Terjadi kesalahan: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -11,6 +11,7 @@ class Config:
     SECRET_KEY = os.getenv('FLASK_SECRET_KEY', 'dev-secret-key-change-in-production')
     DEBUG = os.getenv('FLASK_DEBUG', 'True') == 'True'
     PORT = int(os.getenv('FLASK_PORT', 5000))
+    PERMANENT_SESSION_LIFETIME = 86400  # 24 hours
     
     # Target Website Configuration
     TARGET_URL = os.getenv('TARGET_URL', '')

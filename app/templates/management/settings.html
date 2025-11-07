@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - BPS Web Crawler</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px 0;
+        }
+        .card {
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+        }
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+        }
+        .setting-item {
+            border-bottom: 1px solid #e0e0e0;
+            padding: 15px 0;
+        }
+        .setting-item:last-child {
+            border-bottom: none;
+        }
+        .btn-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" style="max-width: 1200px;">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="text-white">
+                <i class="bi bi-sliders me-2"></i>
+                Application Settings
+            </h2>
+            <a href="{{ url_for('management.index') }}" class="btn btn-light">
+                <i class="bi bi-arrow-left me-2"></i>Kembali
+            </a>
+        </div>
+        
+        <form id="settingsForm">
+            <!-- General Settings -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-gear me-2"></i>
+                        General Settings
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% for setting in grouped_settings.general %}
+                    <div class="setting-item">
+                        <div class="row align-items-center">
+                            <div class="col-md-5">
+                                <label for="{{ setting.key }}" class="form-label fw-bold mb-1">
+                                    {{ setting.key.replace('_', ' ').title() }}
+                                </label>
+                                <p class="text-muted small mb-0">{{ setting.description }}</p>
+                            </div>
+                            <div class="col-md-5">
+                                {% if setting.value in ['true', 'false'] %}
+                                    <select class="form-select" id="{{ setting.key }}" name="{{ setting.key }}">
+                                        <option value="true" {% if setting.value == 'true' %}selected{% endif %}>Enabled</option>
+                                        <option value="false" {% if setting.value == 'false' %}selected{% endif %}>Disabled</option>
+                                    </select>
+                                {% else %}
+                                    <input type="text" class="form-control" id="{{ setting.key }}" name="{{ setting.key }}" value="{{ setting.value }}">
+                                {% endif %}
+                            </div>
+                            <div class="col-md-2 text-end">
+                                <small class="text-muted">
+                                    {% if setting.updated_by %}
+                                        By: {{ setting.updated_by }}
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Scheduler Settings -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-calendar-check me-2"></i>
+                        Scheduler Settings
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% for setting in grouped_settings.scheduler %}
+                    <div class="setting-item">
+                        <div class="row align-items-center">
+                            <div class="col-md-5">
+                                <label for="{{ setting.key }}" class="form-label fw-bold mb-1">
+                                    {{ setting.key.replace('_', ' ').title() }}
+                                </label>
+                                <p class="text-muted small mb-0">{{ setting.description }}</p>
+                            </div>
+                            <div class="col-md-5">
+                                <input type="number" class="form-control" id="{{ setting.key }}" name="{{ setting.key }}" value="{{ setting.value }}">
+                            </div>
+                            <div class="col-md-2 text-end">
+                                <small class="text-muted">
+                                    {% if setting.updated_by %}
+                                        By: {{ setting.updated_by }}
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Notification Settings -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-bell me-2"></i>
+                        Notification Settings
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% for setting in grouped_settings.notification %}
+                    <div class="setting-item">
+                        <div class="row align-items-center">
+                            <div class="col-md-5">
+                                <label for="{{ setting.key }}" class="form-label fw-bold mb-1">
+                                    {{ setting.key.replace('_', ' ').title() }}
+                                </label>
+                                <p class="text-muted small mb-0">{{ setting.description }}</p>
+                            </div>
+                            <div class="col-md-5">
+                                {% if setting.value in ['true', 'false'] %}
+                                    <select class="form-select" id="{{ setting.key }}" name="{{ setting.key }}">
+                                        <option value="true" {% if setting.value == 'true' %}selected{% endif %}>Enabled</option>
+                                        <option value="false" {% if setting.value == 'false' %}selected{% endif %}>Disabled</option>
+                                    </select>
+                                {% else %}
+                                    <input type="text" class="form-control" id="{{ setting.key }}" name="{{ setting.key }}" value="{{ setting.value }}">
+                                {% endif %}
+                            </div>
+                            <div class="col-md-2 text-end">
+                                <small class="text-muted">
+                                    {% if setting.updated_by %}
+                                        By: {{ setting.updated_by }}
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Backup Settings -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-cloud-arrow-up me-2"></i>
+                        Backup Settings
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% for setting in grouped_settings.backup %}
+                    <div class="setting-item">
+                        <div class="row align-items-center">
+                            <div class="col-md-5">
+                                <label for="{{ setting.key }}" class="form-label fw-bold mb-1">
+                                    {{ setting.key.replace('_', ' ').title() }}
+                                </label>
+                                <p class="text-muted small mb-0">{{ setting.description }}</p>
+                            </div>
+                            <div class="col-md-5">
+                                {% if setting.value in ['true', 'false'] %}
+                                    <select class="form-select" id="{{ setting.key }}" name="{{ setting.key }}">
+                                        <option value="true" {% if setting.value == 'true' %}selected{% endif %}>Enabled</option>
+                                        <option value="false" {% if setting.value == 'false' %}selected{% endif %}>Disabled</option>
+                                    </select>
+                                {% else %}
+                                    <input type="number" class="form-control" id="{{ setting.key }}" name="{{ setting.key }}" value="{{ setting.value }}">
+                                {% endif %}
+                            </div>
+                            <div class="col-md-2 text-end">
+                                <small class="text-muted">
+                                    {% if setting.updated_by %}
+                                        By: {{ setting.updated_by }}
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Save Button -->
+            <div class="card">
+                <div class="card-body text-center">
+                    <button type="submit" class="btn btn-gradient btn-lg px-5">
+                        <i class="bi bi-save me-2"></i>
+                        Simpan Pengaturan
+                    </button>
+                    <button type="reset" class="btn btn-secondary btn-lg px-5 ms-2">
+                        <i class="bi bi-x-circle me-2"></i>
+                        Reset
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('settingsForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData);
+            
+            if (!confirm('Simpan perubahan pengaturan?')) return;
+            
+            try {
+                const response = await fetch('{{ url_for("management.update_settings") }}', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                alert(result.message);
+                
+                if (result.success) {
+                    location.reload();
+                }
+            } catch (error) {
+                alert('Terjadi kesalahan: ' + error.message);
+            }
+        });
+    </script>
+</body>
+</html>

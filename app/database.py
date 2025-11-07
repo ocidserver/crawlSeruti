@@ -281,6 +281,28 @@ class Database:
                 logging.error(f"Error reading {logs_json}: {e}")
         
         return migrated_jobs, migrated_logs
+    
+    def get_all_download_logs(self, limit=100):
+        """Get all download logs with limit"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT * FROM download_logs
+                ORDER BY tanggal_download DESC
+                LIMIT ?
+            ''', (limit,))
+            return [dict(row) for row in cursor.fetchall()]
+    
+    def get_download_logs_by_date(self, date):
+        """Get download logs for specific date (YYYY-MM-DD)"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT * FROM download_logs
+                WHERE date(tanggal_download) = ?
+                ORDER BY tanggal_download DESC
+            ''', (date,))
+            return [dict(row) for row in cursor.fetchall()]
 
 
 # Global database instance
