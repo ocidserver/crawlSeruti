@@ -83,6 +83,22 @@ class Database:
                 )
             ''')
             
+            # Table: report_history
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS report_history (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    task_name TEXT NOT NULL,
+                    generator TEXT NOT NULL,
+                    start_date TEXT,
+                    end_date TEXT,
+                    total_rows INTEGER NOT NULL,
+                    file_path TEXT NOT NULL,
+                    status TEXT DEFAULT 'success',
+                    note TEXT,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
             # Create indexes
             cursor.execute('''
                 CREATE INDEX IF NOT EXISTS idx_jobs_status 
@@ -157,6 +173,14 @@ class Database:
             cursor = conn.cursor()
             cursor.execute('SELECT * FROM scheduled_jobs ORDER BY created_at DESC')
             return [dict(row) for row in cursor.fetchall()]
+
+    def get_job_by_name(self, name):
+        """Get a scheduled job by its name"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM scheduled_jobs WHERE name = ? LIMIT 1', (name,))
+            row = cursor.fetchone()
+            return dict(row) if row else None
     
     def get_active_jobs(self):
         """Get only active jobs"""
@@ -398,6 +422,41 @@ class Database:
                 LIMIT ?
             ''', (limit,))
             return [dict(row) for row in cursor.fetchall()]
+    
+    # -----------------------------
+    # Report history helpers
+    # -----------------------------
+    def add_report_history(self, task_name, generator, start_date, end_date, total_rows, file_path, status='success', note=None):
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                INSERT INTO report_history (
+                    task_name, generator, start_date, end_date, total_rows, file_path, status, note, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                task_name, generator, start_date, end_date, int(total_rows), file_path, status, note, datetime.now().isoformat()
+            ))
+            return cursor.lastrowid
+
+    def list_report_history(self, limit=100):
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT id, task_name, generator, start_date, end_date, total_rows, file_path, status, created_at
+                FROM report_history
+                ORDER BY datetime(created_at) DESC
+                LIMIT ?
+            ''', (limit,))
+            return [dict(row) for row in cursor.fetchall()]
+
+    def get_report_history(self, history_id):
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT * FROM report_history WHERE id = ?
+            ''', (history_id,))
+            row = cursor.fetchone()
+            return dict(row) if row else None
     
     def get_download_logs_by_date(self, date):
         """Get download logs for specific date (YYYY-MM-DD)"""

@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+{% block title %}Live Dashboard{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h3 class="mb-0"><i class="bi bi-speedometer2 me-2"></i>Live Dashboard</h3>
+    <small class="text-muted">Monitoring realtime berdasarkan log hasil crawling</small>
+  </div>
+  <div>
+    <a href="{{ url_for('main.index') }}" class="btn btn-sm btn-secondary">&laquo; Kembali</a>
+  </div>
+</div>
+<div class="row g-3 mb-3">
+  <div class="col-md-4">
+    <label class="form-label">Pilih Task</label>
+    <select id="taskSelect" class="form-select" onchange="reloadMetrics()">
+      <option value="">-- pilih --</option>
+      {% for t in tasks %}
+        <option value="{{ t.task_name }}">{{ t.task_name }} ({{ t.total_logs }})</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-3">
+    <label class="form-label">Start Date</label>
+    <input type="date" id="startDate" class="form-control" onchange="reloadMetrics()" />
+  </div>
+  <div class="col-md-3">
+    <label class="form-label">End Date</label>
+    <input type="date" id="endDate" class="form-control" onchange="reloadMetrics()" />
+  </div>
+  <div class="col-md-2 d-flex align-items-end">
+    <button class="btn btn-primary w-100" onclick="reloadMetrics()"><i class="bi bi-arrow-clockwise me-1"></i> Refresh</button>
+  </div>
+</div>
+<div id="metricsArea" class="mb-4" style="display:none;">
+  <div class="row g-3">
+    <div class="col-md-3">
+      <div class="card border-primary h-100">
+        <div class="card-body">
+          <div class="text-muted small">Total Logs</div>
+          <h4 id="mTotal" class="mb-0">-</h4>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card border-success h-100">
+        <div class="card-body">
+          <div class="text-muted small">Coverage %</div>
+            <h4 id="mCoverage" class="mb-0">-</h4>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card border-info h-100">
+        <div class="card-body">
+          <div class="text-muted small">Range Data</div>
+          <h6 class="mb-0" id="mRange">-</h6>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card border-warning h-100">
+        <div class="card-body">
+          <div class="text-muted small">Last Download</div>
+          <h6 class="mb-0" id="mLast">-</h6>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="card mb-4" id="chartCard" style="display:none;">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0"><i class="bi bi-graph-up"></i> Aktivitas Harian</h5>
+    <small class="text-muted" id="missingInfo"></small>
+  </div>
+  <div class="card-body">
+    <canvas id="activityChart" height="120"></canvas>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+let chartRef = null;
+async function reloadMetrics(){
+  const task = document.getElementById('taskSelect').value;
+  if(!task){return;}
+  const start = document.getElementById('startDate').value;
+  const end = document.getElementById('endDate').value;
+  try {
+    const qs = new URLSearchParams({task});
+    if(start) qs.append('start_date', start);
+    if(end) qs.append('end_date', end);
+    const r = await fetch(`/dashboard/api/metrics?${qs.toString()}`);
+    const j = await r.json();
+    if(!j.success){alert(j.message);return;}
+    document.getElementById('metricsArea').style.display='block';
+    document.getElementById('chartCard').style.display='block';
+    document.getElementById('mTotal').textContent = j.total_logs;
+    document.getElementById('mCoverage').textContent = j.coverage_pct !== null ? j.coverage_pct + '%' : '-';
+    document.getElementById('mRange').textContent = j.first_data_date && j.last_data_date ? `${j.first_data_date} s/d ${j.last_data_date}` : '-';
+    document.getElementById('mLast').textContent = j.last_download_at || '-';
+    if(j.missing_dates && j.missing_dates.length){
+      document.getElementById('missingInfo').textContent = `Missing ${j.missing_dates.length} hari (sample: ${j.missing_dates.slice(0,5).join(', ')})`;
+    } else {
+      document.getElementById('missingInfo').textContent = '';
+    }
+    const labels = j.timeseries.map(p=>p.date);
+    const counts = j.timeseries.map(p=>p.count);
+    if(chartRef){ chartRef.destroy(); }
+    const ctx = document.getElementById('activityChart');
+    chartRef = new Chart(ctx, {
+      type: 'bar',
+      data: { labels, datasets: [{ label:'Downloads', data:counts, backgroundColor:'#667eea'}]},
+      options:{
+        responsive:true,
+        scales:{ y:{ beginAtZero:true } }
+      }
+    });
+  } catch(e){alert('Gagal ambil metrics: '+e.message)}
+}
+// Auto refresh every 60s
+setInterval(()=>{reloadMetrics();},60000);
+</script>
+{% endblock %}

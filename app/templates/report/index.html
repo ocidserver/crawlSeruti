@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% block title %}Generate Report{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h3 class="mb-0"><i class="bi bi-file-earmark-bar-graph me-2"></i>Generate Report</h3>
+    <small class="text-muted">Hanya untuk task yang sudah lengkap (coverage penuh)</small>
+  </div>
+  <div class="btn-group">
+    <a href="{{ url_for('report.history') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-clock-history me-1"></i>Riwayat</a>
+    <a href="{{ url_for('main.index') }}" class="btn btn-sm btn-secondary">&laquo; Kembali</a>
+  </div>
+</div>
+<div class="card mb-4">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0"><i class="bi bi-check2-circle"></i> Eligible Tasks</h5>
+    <button class="btn btn-sm btn-primary" onclick="loadEligible()"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+  </div>
+  <div class="card-body">
+    <div id="eligibleList" class="text-muted">Loading...</div>
+  </div>
+</div>
+<div class="card">
+  <div class="card-header">
+    <h5 class="mb-0"><i class="bi bi-gear"></i> Generate</h5>
+  </div>
+  <div class="card-body">
+    <form id="reportForm" onsubmit="runReport(event)">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label">Task</label>
+          <input type="text" id="task_name" name="task_name" class="form-control" readonly required>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Start Date</label>
+          <input type="date" id="start_date" name="start_date" class="form-control" required>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">End Date</label>
+          <input type="date" id="end_date" name="end_date" class="form-control" required>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Generator</label>
+          <select id="generator" name="generator" class="form-select">
+            <option value="seruti">Seruti</option>
+            <option value="susenas">Susenas</option>
+          </select>
+        </div>
+        <div class="col-12">
+          <button class="btn btn-success"><i class="bi bi-play-circle me-1"></i>Generate Report</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+<script>
+async function loadEligible(){
+  const box = document.getElementById('eligibleList');
+  box.innerHTML = 'Loading...';
+  try {
+    const r = await fetch("{{ url_for('report.eligibles') }}");
+    const j = await r.json();
+    if(!j.success){ box.innerHTML = j.message; return; }
+    if(!j.eligible.length){ box.innerHTML = '<span class="text-danger">Tidak ada task yang lengkap.</span>'; return; }
+    box.innerHTML = '<div class="table-responsive"><table class="table table-sm table-striped"><thead><tr><th>Task</th><th>Periode</th><th>Hari</th><th>Aksi</th></tr></thead><tbody>'+j.eligible.map(e=>`<tr><td><strong>${e.task_name}</strong></td><td>${e.start_date} s/d ${e.end_date}</td><td>${e.days}</td><td><button class='btn btn-sm btn-outline-primary' onclick="chooseTask('${e.task_name}','${e.start_date}','${e.end_date}')"><i class='bi bi-check2'></i> Pilih</button></td></tr>`).join('')+'</tbody></table></div>';
+  } catch(e){ box.innerHTML = e.message; }
+}
+function chooseTask(t,s,e){
+  document.getElementById('task_name').value = t;
+  document.getElementById('start_date').value = s;
+  document.getElementById('end_date').value = e;
+}
+async function runReport(ev){
+  ev.preventDefault();
+  const payload = {
+    task_name: document.getElementById('task_name').value,
+    generator: document.getElementById('generator').value,
+    start_date: document.getElementById('start_date').value,
+    end_date: document.getElementById('end_date').value
+  };
+  if(!payload.task_name){ alert('Pilih task terlebih dahulu dari daftar Eligible.'); return; }
+  try {
+    const r = await fetch("{{ url_for('report.run') }}", { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+    if(r.status===200){
+      const blob = await r.blob();
+      const disposition = r.headers.get('Content-Disposition');
+      let filename = 'report_download.txt';
+      if(disposition){
+        const m = disposition.match(/filename="?([^";]+)"?/);
+        if(m) filename = m[1];
+      }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename; a.click();
+      URL.revokeObjectURL(url);
+      loadEligible();
+    } else {
+      const j = await r.json();
+      alert(j.message || 'Gagal membuat report');
+    }
+  } catch(e){ alert('Error: '+e.message); }
+}
+loadEligible();
+</script>
+{% endblock %}
