@@ -66,6 +66,35 @@
         </div>
       </div>
     </div>
+    <div class="col-md-3">
+      <div class="card border-secondary h-100">
+        <div class="card-body">
+          <div class="text-muted small">Avg File Size (KB)</div>
+          <h6 class="mb-0" id="mAvgSize">-</h6>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card border-dark h-100">
+        <div class="card-body">
+          <div class="text-muted small">Download Duration (s)</div>
+          <h6 class="mb-0" id="mDuration">-</h6>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 d-flex align-items-stretch">
+      <div class="card h-100 w-100">
+        <div class="card-body d-flex flex-column">
+          <div class="text-muted small">Eligibility</div>
+          <div class="mt-auto">
+            <button id="btnGen" class="btn btn-sm btn-success w-100" style="display:none;" onclick="openGenerate()">
+              <i class="bi bi-file-earmark-bar-graph me-1"></i> Generate Report
+            </button>
+            <small id="eligInfo" class="text-muted"></small>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 <div class="card mb-4" id="chartCard" style="display:none;">
@@ -98,6 +127,8 @@ async function reloadMetrics(){
     document.getElementById('mCoverage').textContent = j.coverage_pct !== null ? j.coverage_pct + '%' : '-';
     document.getElementById('mRange').textContent = j.first_data_date && j.last_data_date ? `${j.first_data_date} s/d ${j.last_data_date}` : '-';
     document.getElementById('mLast').textContent = j.last_download_at || '-';
+  document.getElementById('mAvgSize').textContent = j.avg_file_size ? (j.avg_file_size/1024).toFixed(1) : '-';
+  document.getElementById('mDuration').textContent = j.download_duration_seconds ?? '-';
     if(j.missing_dates && j.missing_dates.length){
       document.getElementById('missingInfo').textContent = `Missing ${j.missing_dates.length} hari (sample: ${j.missing_dates.slice(0,5).join(', ')})`;
     } else {
@@ -116,8 +147,61 @@ async function reloadMetrics(){
       }
     });
   } catch(e){alert('Gagal ambil metrics: '+e.message)}
+  // Check eligibility
+  await checkEligibility();
 }
 // Auto refresh every 60s
 setInterval(()=>{reloadMetrics();},60000);
+
+async function checkEligibility(){
+  const task = document.getElementById('taskSelect').value;
+  if(!task){ return; }
+  try{
+    const r = await fetch("{{ url_for('report.eligibles') }}");
+    const j = await r.json();
+    if(!j.success){ return; }
+    const start = document.getElementById('startDate').value;
+    const end = document.getElementById('endDate').value;
+    const eligible = j.eligible.find(e => e.task_name === task && (!start || e.start_date===start) && (!end || e.end_date===end));
+    if(eligible){
+      document.getElementById('btnGen').style.display='block';
+      document.getElementById('eligInfo').textContent = `Eligible (${eligible.start_date} s/d ${eligible.end_date})`;
+    } else {
+      document.getElementById('btnGen').style.display='none';
+      document.getElementById('eligInfo').textContent = '';
+    }
+  }catch(e){ /* ignore */ }
+}
+
+function openGenerate(){
+  const task = document.getElementById('taskSelect').value;
+  const start = document.getElementById('startDate').value;
+  const end = document.getElementById('endDate').value;
+  const generator = prompt('Generator (seruti/susenas):','seruti');
+  if(!generator){ return; }
+  const format = prompt('Format (xlsx/pdf/txt):','xlsx');
+  runReport(task, generator, format, start, end);
+}
+
+async function runReport(task, generator, format, start, end){
+  try{
+    const r = await fetch("{{ url_for('report.run') }}", {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ task_name: task, generator, format, start_date: start, end_date: end })
+    });
+    if(r.status===200){
+      const blob = await r.blob();
+      const disp = r.headers.get('Content-Disposition')||'';
+      let filename = 'report_download';
+      const m = disp.match(/filename="?([^";]+)"?/);
+      if(m) filename = m[1];
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href=url; a.download=filename; a.click();
+      URL.revokeObjectURL(url);
+    } else {
+      const j = await r.json(); alert(j.message||'Gagal membuat report');
+    }
+  }catch(e){ alert('Error: '+e.message); }
+}
 </script>
 {% endblock %}

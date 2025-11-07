@@ -63,6 +63,7 @@ def run():
     data = request.get_json(force=True)
     task_name = data.get('task_name')
     generator = (data.get('generator') or '').lower()
+    output_format = (data.get('format') or 'xlsx').lower()
     start_date = data.get('start_date')
     end_date = data.get('end_date')
 
@@ -128,14 +129,22 @@ def run():
     reports_dir = os.path.join(Config.DOWNLOAD_PATH, 'reports')
     os.makedirs(reports_dir, exist_ok=True)
     try:
-        out_path, stats = gen_fn(batch_file_path, reports_dir)
+        out_path, stats = gen_fn(batch_file_path, reports_dir, output_format=output_format)
     except Exception as e:
         db.add_report_history(task_name, generator, start_date, end_date, 0, '', status='failed', note=str(e))
         return jsonify({'success': False, 'message': f'Gagal membuat report: {e}'}), 500
 
     rid = db.add_report_history(task_name, generator, start_date, end_date, stats.get('total_rows', 0), out_path, status='success')
 
-    return send_file(out_path, as_attachment=True, download_name=os.path.basename(out_path))
+    # Derive mimetype
+    fname = os.path.basename(out_path).lower()
+    if fname.endswith('.xlsx'):
+        mimetype = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    elif fname.endswith('.pdf'):
+        mimetype = 'application/pdf'
+    else:
+        mimetype = 'text/plain; charset=utf-8'
+    return send_file(out_path, as_attachment=True, download_name=os.path.basename(out_path), mimetype=mimetype)
 
 
 @report_bp.route('/history')

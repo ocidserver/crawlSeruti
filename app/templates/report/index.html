@@ -46,6 +46,14 @@
             <option value="susenas">Susenas</option>
           </select>
         </div>
+        <div class="col-md-2">
+          <label class="form-label">Format</label>
+          <select id="format" name="format" class="form-select">
+            <option value="xlsx" selected>Excel (.xlsx)</option>
+            <option value="pdf">PDF (.pdf)</option>
+            <option value="txt">Text (.txt)</option>
+          </select>
+        </div>
         <div class="col-12">
           <button class="btn btn-success"><i class="bi bi-play-circle me-1"></i>Generate Report</button>
         </div>
@@ -75,6 +83,7 @@ async function runReport(ev){
   const payload = {
     task_name: document.getElementById('task_name').value,
     generator: document.getElementById('generator').value,
+    format: document.getElementById('format').value,
     start_date: document.getElementById('start_date').value,
     end_date: document.getElementById('end_date').value
   };

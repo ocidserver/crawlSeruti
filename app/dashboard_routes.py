@@ -5,6 +5,7 @@ import os
 
 from app.database import db
 from app.auth import login_required
+from app.config import Config
 
 
 dashboard_bp = Blueprint('dashboard', __name__, url_prefix='/dashboard')
@@ -49,6 +50,34 @@ def metrics():
 
     logs = db.get_logs_for_task(task, start, end)
     total_logs = len(logs)
+
+    # File size & duration metrics (if files exist). Duration approximated by gap between earliest & latest download times.
+    sizes = []
+    download_times = []
+    for l in logs:
+        fn = l.get('nama_file')
+        if fn:
+            path = fn if os.path.isabs(fn) else os.path.join(Config.DOWNLOAD_PATH, fn)
+            if os.path.exists(path):
+                try:
+                    sizes.append(os.path.getsize(path))
+                except Exception:
+                    pass
+        td = l.get('tanggal_download')
+        if td:
+            try:
+                download_times.append(datetime.fromisoformat(td))
+            except Exception:
+                try:
+                    download_times.append(datetime.strptime(td, '%Y-%m-%d %H:%M:%S'))
+                except Exception:
+                    pass
+    avg_size = round(sum(sizes)/len(sizes),2) if sizes else None
+    max_size = max(sizes) if sizes else None
+    min_size = min(sizes) if sizes else None
+    duration_seconds = None
+    if download_times:
+        duration_seconds = int((max(download_times) - min(download_times)).total_seconds())
 
     # Build per-day counts and coverage set
     per_day = defaultdict(int)
@@ -112,5 +141,9 @@ def metrics():
         'coverage_pct': coverage_pct,
         'expected_days': len(expected_days),
         'missing_dates': missing[:50],
-        'timeseries': series
+        'timeseries': series,
+        'avg_file_size': avg_size,
+        'max_file_size': max_size,
+        'min_file_size': min_size,
+        'download_duration_seconds': duration_seconds
     })

@@ -12,6 +12,7 @@ This guide covers the live dashboard (metrics & chart) and the final report gene
   - Range data (first/last data date)
   - Last download timestamp
 - A daily activity chart (downloads per day) is displayed.
+- Extra metrics: average/min/max file size and total download duration (span) across selected range.
 - Auto-refresh every 60 seconds.
 
 API endpoint: `/dashboard/api/metrics?task=<TASK>&start_date=YYYY-MM-DD&end_date=YYYY-MM-DD`
@@ -29,7 +30,14 @@ API endpoint: `/dashboard/api/metrics?task=<TASK>&start_date=YYYY-MM-DD&end_date
 - Choose a task and generator:
   - Seruti generator
   - Susenas generator
-- Output (temporary) format: `.txt` saved under `downloads/reports/` and recorded in `report_history`.
+- Output formats:
+  - Excel (.xlsx) [default]
+  - PDF (.pdf)
+  - Text (.txt)
+  Saved under `downloads/reports/` and recorded in `report_history`.
+  Note: PDF requires dependency `reportlab` (included in requirements.txt).
+
+From Dashboard, if the task is eligible (full coverage), a “Generate Report” button appears for quick generation.
 
 ## Smoke Testing
 
