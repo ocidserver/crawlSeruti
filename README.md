@@ -34,9 +34,11 @@ Automated web crawler system untuk BPS dengan support multiple crawlers (Seruti 
 - ✅ **Download Log** - Complete download tracking dengan task name
 - ✅ **Retry Mechanism** - Auto-retry dengan configurable delay
 - ✅ **Batching** - Gabungkan banyak file hasil crawling menjadi satu dataset terstruktur (CSV/XLSX)
-- ✅ **Live Dashboard** - Halaman metrics per task (coverage %, total logs, range data, last download) + timeseries chart
-- ✅ **Report Generation** - Template generator (Seruti / Susenas) menghasilkan laporan analisis (teks) dari data batch
-- ✅ **History Tracking** - Riwayat batch & report dengan download ulang file
+- ✅ **Live Dashboard** - Metrics per task (coverage %, total logs, range data, last download) + timeseries chart (auto-refresh)
+- ✅ **Extended Metrics** - Average/min/max file size & total download duration span
+- ✅ **Report Generation** - Multi-format (XLSX / PDF / TXT) dengan generator Seruti & Susenas
+- ✅ **Quick Modal Report** - Generate langsung dari dashboard jika task eligible (full coverage)
+- ✅ **History Tracking** - Riwayat batch & report + file download ulang
 
 ### 🔒 Data & Security
 
@@ -338,7 +340,7 @@ CREATE TABLE report_history (
 
 ---
 
-## 🧪 Testing
+## 🧪 Testing & Smoke
 
 ### Run All Tests
 
@@ -351,7 +353,8 @@ CREATE TABLE report_history (
 
 # Test download detection
 .venv\Scripts\python.exe tests\test_download_detection.py
-\n+# Smoke test dashboard & report
+
+# Smoke test dashboard & report
 .venv\Scripts\python.exe scripts\smoke_seed.py
 .venv\Scripts\python.exe tests\test_dashboard_report_smoke.py
 ```
@@ -365,11 +368,20 @@ CREATE TABLE report_history (
 - ✅ UI: Table format responsive
 - ✅ Dashboard: Metrics & chart tampil
 - ✅ Batching: CSV/XLSX digabung & riwayat tercatat
-- ✅ Report: Generator Seruti/Susenas membuat laporan & riwayat tercatat
+- ✅ Report: Generator Seruti/Susenas membuat laporan multi-format (XLSX/PDF/TXT) & riwayat tercatat
 
 ---
 
 ## 🐛 Troubleshooting
+
+### Report PDF Layout Issues
+
+Jika PDF kosong atau tidak memiliki tabel:
+
+1. Pastikan dependency `reportlab` terpasang di virtualenv.
+2. Cek kolom `data_tanggal` untuk Seruti agar tabel distribusi muncul.
+3. Pastikan file batch sumber berisi data (total_rows > 0).
+4. Regenerate laporan dengan format XLSX untuk verifikasi isi.
 
 ### ChromeDriver Issues
 

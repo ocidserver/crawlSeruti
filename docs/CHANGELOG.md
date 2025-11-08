@@ -83,6 +83,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.1.0] - 2025-11-08
+
+### 📊 Dashboard & Reporting Enhancements
+
+### Added
+
+- **Extended Dashboard Metrics**: average/min/max file size & total download duration span.
+- **Report Generation Modal**: Quick generate from dashboard if coverage penuh.
+- **Multi-Format Reports**: Generators (Seruti & Susenas) now output XLSX / PDF / TXT.
+- **Enhanced PDF Layout**: ReportLab Platypus (styled metadata table, page numbers, Seruti date distribution table).
+- **Shared PDF Utilities**: `app/report_generators/pdf_utils.py` deduplicates layout code.
+
+### Changed
+
+- **Seruti & Susenas Generators**: Refactored PDF branch to use shared utilities; XLSX still includes Summary (+ PerDate sheet for Seruti when available).
+- **README / Docs**: Updated with multi-format report info, dashboard modal, PDF troubleshooting.
+
+### Fixed / Robustness
+
+- Graceful date parsing for Seruti (`data_tanggal`) when available.
+- Consistent Excel engine usage (`openpyxl`).
+
+### Notes
+
+- If PDF table tidak muncul, cek kolom sumber (Seruti: `data_tanggal`).
+- Future: error rate metric & async report jobs.
+
+---
+
 ## [1.5.0] - 2025-11-06
 
 ### 🚀 Susenas Crawler Implementation

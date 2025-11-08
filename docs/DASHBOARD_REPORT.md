@@ -26,18 +26,21 @@ API endpoint: `/dashboard/api/metrics?task=<TASK>&start_date=YYYY-MM-DD&end_date
 ## Report Generation
 
 - URL: /report/
-- Eligible tasks are tasks with full coverage for their scheduled period.
-- Choose a task and generator:
-  - Seruti generator
-  - Susenas generator
-- Output formats:
-  - Excel (.xlsx) [default]
-  - PDF (.pdf)
-  - Text (.txt)
-    Saved under `downloads/reports/` and recorded in `report_history`.
-    Note: PDF requires dependency `reportlab` (included in requirements.txt).
+- Eligible tasks: full coverage (semua hari dalam rentang tersedia di download log). Tombol cepat muncul di dashboard.
+- Pilih task + generator:
+  - Seruti
+  - Susenas
+- Format output yang didukung:
+  - Excel (.xlsx): Sheet Summary + optional sheet distribusi tanggal
+  - PDF (.pdf): Layout dengan judul, tabel metadata, halaman bernomor, dan (Seruti) tabel distribusi `data_tanggal` jika ada
+  - Text (.txt): Ringkas (fallback)
 
-From Dashboard, if the task is eligible (full coverage), a “Generate Report” button appears for quick generation.
+Semua file disimpan di `downloads/reports/` dan direkam di `report_history`.
+
+Dependensi PDF: `reportlab` (sudah ada di `requirements.txt`). Jika PDF kosong cek:
+1. Data batch tidak kosong
+2. Kolom tanggal ada (untuk tabel distribusi)
+3. Virtualenv aktif & reportlab terpasang
 
 ## Smoke Testing
 
@@ -67,6 +70,6 @@ Artifacts created:
 
 Troubleshooting:
 
-- If `ModuleNotFoundError: app`, ensure script is run from project root and virtualenv is activated.
-- If coverage is `null`, verify date range parameters match the scheduled job period.
-- If report not eligible, confirm seeded logs match every day in job range (run seed again).
+- `ModuleNotFoundError: app` → jalankan perintah dari root project & aktivasi virtualenv.
+- Coverage `null` → tanggal tidak cocok dengan rentang job (cek start/end job).
+- Report tidak eligible → log harian belum lengkap (seed ulang / pastikan crawler berjalan setiap hari).
