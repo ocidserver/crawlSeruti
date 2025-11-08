@@ -41,32 +41,80 @@ def generate(batch_file_path: str, output_dir: str, output_format: str = 'xlsx')
                 pd.DataFrame({'data_tanggal': per_date.index, 'count': per_date.values}).to_excel(writer, index=False, sheet_name='PerDate')
         return out_path, stats
     elif output_format == 'pdf':
+        # Enhanced PDF layout using ReportLab Platypus (tables, headers, page numbers)
         try:
             from reportlab.lib.pagesizes import A4
-            from reportlab.pdfgen import canvas
+            from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak
+            from reportlab.lib.styles import getSampleStyleSheet
+            from reportlab.lib import colors
         except Exception as e:
             raise RuntimeError(f"reportlab belum terpasang: {e}")
+
         out_path = os.path.join(output_dir, f"{base}.pdf")
-        c = canvas.Canvas(out_path, pagesize=A4)
-        width, height = A4
-        y = height - 50
-        lines = [
-            'LAPORAN SERUTI',
-            f"File sumber: {os.path.basename(batch_file_path)}",
-            f"Total baris: {stats['total_rows']}",
-            f"Kolom: {', '.join(stats['columns'])}",
-            ''
+
+        # Document setup
+        doc = SimpleDocTemplate(
+            out_path,
+            pagesize=A4,
+            leftMargin=36,
+            rightMargin=36,
+            topMargin=54,
+            bottomMargin=54,
+        )
+
+        styles = getSampleStyleSheet()
+        story = []
+
+        # Header
+        title = Paragraph("<b>LAPORAN SERUTI</b>", styles['Title'])
+        meta = [
+            ["File sumber", os.path.basename(batch_file_path)],
+            ["Generated At", stats['generated_at']],
+            ["Total baris", stats['total_rows']],
+            ["Kolom", ', '.join(stats['columns'])],
         ]
+        story.append(title)
+        story.append(Spacer(1, 6))
+
+        meta_tbl = Table(meta, colWidths=[120, 360])
+        meta_tbl.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (0,-1), colors.whitesmoke),
+            ('TEXTCOLOR', (0,0), (0,-1), colors.black),
+            ('ALIGN', (0,0), (-1,-1), 'LEFT'),
+            ('FONTNAME', (0,0), (-1,-1), 'Helvetica'),
+            ('FONTSIZE', (0,0), (-1,-1), 9),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 4),
+        ]))
+        story.append(meta_tbl)
+        story.append(Spacer(1, 12))
+
+        # Per-date distribution
         if per_date is not None:
-            lines.append('Distribusi per data_tanggal:')
+            story.append(Paragraph("<b>Distribusi per data_tanggal</b>", styles['Heading3']))
+            data = [["data_tanggal", "count"]]
             for k, v in per_date.items():
-                lines.append(f'  - {k}: {v}')
-        for line in lines:
-            c.drawString(40, y, line)
-            y -= 18
-            if y < 60:
-                c.showPage(); y = height - 50
-        c.save()
+                data.append([str(k), int(v)])
+            tbl = Table(data, colWidths=[200, 80])
+            tbl.setStyle(TableStyle([
+                ('BACKGROUND', (0,0), (-1,0), colors.lightgrey),
+                ('TEXTCOLOR', (0,0), (-1,0), colors.black),
+                ('ALIGN', (1,1), (-1,-1), 'RIGHT'),
+                ('GRID', (0,0), (-1,-1), 0.25, colors.grey),
+                ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+                ('FONTNAME', (0,1), (-1,-1), 'Helvetica'),
+                ('FONTSIZE', (0,0), (-1,-1), 9),
+            ]))
+            story.append(tbl)
+
+        # Footer with page numbers
+        def _add_page_number(canvas, doc_):
+            canvas.saveState()
+            page_num_text = f"Halaman {doc_.page}"
+            canvas.setFont('Helvetica', 8)
+            canvas.drawRightString(A4[0]-36, 20, page_num_text)
+            canvas.restoreState()
+
+        doc.build(story, onFirstPage=_add_page_number, onLaterPages=_add_page_number)
         return out_path, stats
     else:
         # fallback to txt
