@@ -34,29 +34,13 @@ def generate(batch_file_path: str, output_dir: str, output_format: str = 'xlsx')
             pd.DataFrame(summary_rows, columns=['Key','Value']).to_excel(writer, index=False, sheet_name='Summary')
         return out_path, stats
     elif output_format == 'pdf':
-        # Enhanced PDF layout using ReportLab Platypus (tables, headers, page numbers)
+        # Enhanced PDF layout using shared utility
         try:
-            from reportlab.lib.pagesizes import A4
-            from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
-            from reportlab.lib.styles import getSampleStyleSheet
-            from reportlab.lib import colors
+            from .pdf_utils import build_pdf
         except Exception as e:
-            raise RuntimeError(f"reportlab belum terpasang: {e}")
+            raise RuntimeError(f"reportlab utils missing or not installed: {e}")
 
         out_path = os.path.join(output_dir, f"{base}.pdf")
-
-        doc = SimpleDocTemplate(
-            out_path,
-            pagesize=A4,
-            leftMargin=36,
-            rightMargin=36,
-            topMargin=54,
-            bottomMargin=54,
-        )
-        styles = getSampleStyleSheet()
-        story = []
-
-        title = Paragraph("<b>LAPORAN SUSENAS</b>", styles['Title'])
         meta = [
             ["File sumber", os.path.basename(batch_file_path)],
             ["Generated At", stats['generated_at']],
@@ -66,28 +50,7 @@ def generate(batch_file_path: str, output_dir: str, output_format: str = 'xlsx')
         if distinct_sources is not None:
             meta.append(["Distinct source_file", str(distinct_sources)])
 
-        story.append(title)
-        story.append(Spacer(1, 6))
-
-        meta_tbl = Table(meta, colWidths=[140, 340])
-        meta_tbl.setStyle(TableStyle([
-            ('BACKGROUND', (0,0), (0,-1), colors.whitesmoke),
-            ('TEXTCOLOR', (0,0), (0,-1), colors.black),
-            ('ALIGN', (0,0), (-1,-1), 'LEFT'),
-            ('FONTNAME', (0,0), (-1,-1), 'Helvetica'),
-            ('FONTSIZE', (0,0), (-1,-1), 9),
-            ('BOTTOMPADDING', (0,0), (-1,-1), 4),
-        ]))
-        story.append(meta_tbl)
-
-        def _add_page_number(canvas, doc_):
-            canvas.saveState()
-            page_num_text = f"Halaman {doc_.page}"
-            canvas.setFont('Helvetica', 8)
-            canvas.drawRightString(A4[0]-36, 20, page_num_text)
-            canvas.restoreState()
-
-        doc.build(story, onFirstPage=_add_page_number, onLaterPages=_add_page_number)
+        build_pdf(out_path, "LAPORAN SUSENAS", meta, sections=None)
         return out_path, stats
     else:
         out_path = os.path.join(output_dir, f"{base}.txt")
@@ -109,4 +72,8 @@ def _read(path):
     ext = os.path.splitext(path)[1].lower()
     if ext == '.csv':
         return pd.read_csv(path)
-    return pd.read_excel(path)
+    # Excel: prefer openpyxl engine for .xlsx
+    try:
+        return pd.read_excel(path, engine='openpyxl')
+    except Exception:
+        return pd.read_excel(path)
