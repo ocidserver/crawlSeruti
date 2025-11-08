@@ -34,8 +34,8 @@ API endpoint: `/dashboard/api/metrics?task=<TASK>&start_date=YYYY-MM-DD&end_date
   - Excel (.xlsx) [default]
   - PDF (.pdf)
   - Text (.txt)
-  Saved under `downloads/reports/` and recorded in `report_history`.
-  Note: PDF requires dependency `reportlab` (included in requirements.txt).
+    Saved under `downloads/reports/` and recorded in `report_history`.
+    Note: PDF requires dependency `reportlab` (included in requirements.txt).
 
 From Dashboard, if the task is eligible (full coverage), a “Generate Report” button appears for quick generation.
 

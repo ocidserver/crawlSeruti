@@ -29,7 +29,9 @@ def _daterange(start_date, end_date):
 def index():
     active_jobs = db.get_active_jobs()
     tasks = db.get_batchable_tasks()
-    return render_template('dashboard/index.html', active_jobs=active_jobs, tasks=tasks)
+    # Pass all jobs to map task->crawler_type for generator preselect
+    all_jobs = db.get_all_jobs()
+    return render_template('dashboard/index.html', active_jobs=active_jobs, tasks=tasks, jobs=all_jobs)
 
 
 @dashboard_bp.route('/api/metrics')

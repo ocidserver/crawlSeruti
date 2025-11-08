@@ -87,12 +87,61 @@
         <div class="card-body d-flex flex-column">
           <div class="text-muted small">Eligibility</div>
           <div class="mt-auto">
-            <button id="btnGen" class="btn btn-sm btn-success w-100" style="display:none;" onclick="openGenerate()">
+            <button id="btnGen" class="btn btn-sm btn-success w-100" style="display:none;" onclick="showGenerateModal()">
               <i class="bi bi-file-earmark-bar-graph me-1"></i> Generate Report
             </button>
             <small id="eligInfo" class="text-muted"></small>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Modal Generate Report -->
+<div class="modal fade" id="generateModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-file-earmark-bar-graph me-2"></i>Generate Report</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="genForm" onsubmit="submitGenerate(event)">
+          <div class="mb-3">
+            <label class="form-label">Task</label>
+            <input type="text" id="genTask" class="form-control" readonly>
+          </div>
+          <div class="row g-2">
+            <div class="col-md-6">
+              <label class="form-label">Start Date</label>
+              <input type="date" id="genStart" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">End Date</label>
+              <input type="date" id="genEnd" class="form-control" required>
+            </div>
+          </div>
+          <div class="row g-2 mt-2">
+            <div class="col-md-6">
+              <label class="form-label">Generator</label>
+              <select id="genGenerator" class="form-select" required>
+                <option value="seruti">Seruti</option>
+                <option value="susenas">Susenas</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Format</label>
+              <select id="genFormat" class="form-select" required>
+                <option value="xlsx" selected>Excel (.xlsx)</option>
+                <option value="pdf">PDF (.pdf)</option>
+                <option value="txt">Text (.txt)</option>
+              </select>
+            </div>
+          </div>
+          <div class="mt-3 text-end">
+            <button type="submit" class="btn btn-success"><i class="bi bi-play-circle me-1"></i>Generate</button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
@@ -173,14 +222,40 @@ async function checkEligibility(){
   }catch(e){ /* ignore */ }
 }
 
-function openGenerate(){
+function showGenerateModal(){
   const task = document.getElementById('taskSelect').value;
   const start = document.getElementById('startDate').value;
   const end = document.getElementById('endDate').value;
-  const generator = prompt('Generator (seruti/susenas):','seruti');
-  if(!generator){ return; }
-  const format = prompt('Format (xlsx/pdf/txt):','xlsx');
-  runReport(task, generator, format, start, end);
+  document.getElementById('genTask').value = task;
+  document.getElementById('genStart').value = start;
+  document.getElementById('genEnd').value = end;
+  preselectGenerator(task);
+  const modal = new bootstrap.Modal(document.getElementById('generateModal'));
+  modal.show();
+}
+
+function preselectGenerator(task){
+  // jobs data embedded
+  const jobs = window.__jobs || [];
+  const job = jobs.find(j => j.name === task);
+  if(job){
+    if(job.crawler_type === 'seruti'){ document.getElementById('genGenerator').value='seruti'; }
+    else if(job.crawler_type === 'susenas'){ document.getElementById('genGenerator').value='susenas'; }
+  }
+}
+
+function submitGenerate(ev){
+  ev.preventDefault();
+  runReport(
+    document.getElementById('genTask').value,
+    document.getElementById('genGenerator').value,
+    document.getElementById('genFormat').value,
+    document.getElementById('genStart').value,
+    document.getElementById('genEnd').value
+  );
+  const modalEl = document.getElementById('generateModal');
+  const m = bootstrap.Modal.getInstance(modalEl);
+  if(m) m.hide();
 }
 
 async function runReport(task, generator, format, start, end){
@@ -203,5 +278,9 @@ async function runReport(task, generator, format, start, end){
     }
   }catch(e){ alert('Error: '+e.message); }
 }
+</script>
+<script>
+// Embed jobs array for generator auto-selection (serialize then parse to keep JS valid before Jinja renders)
+window.__jobs = JSON.parse('{{ jobs|tojson|tojson }}');
 </script>
 {% endblock %}

@@ -28,13 +28,15 @@ Automated web crawler system untuk BPS dengan support multiple crawlers (Seruti 
 - ✅ **Settings Management** - Konfigurasi aplikasi via web UI
 - ✅ **System Monitoring** - Resource usage & system information
 
-### 📊 Dashboard Features
+### 📊 Dashboard & Analytics
 
 - ✅ **Job History** - Track semua jobs (active, completed, cancelled, failed)
 - ✅ **Download Log** - Complete download tracking dengan task name
 - ✅ **Retry Mechanism** - Auto-retry dengan configurable delay
-- ✅ **Web Dashboard** - Modern UI dengan table format
-- ✅ **Real-time Status** - Live job monitoring
+- ✅ **Batching** - Gabungkan banyak file hasil crawling menjadi satu dataset terstruktur (CSV/XLSX)
+- ✅ **Live Dashboard** - Halaman metrics per task (coverage %, total logs, range data, last download) + timeseries chart
+- ✅ **Report Generation** - Template generator (Seruti / Susenas) menghasilkan laporan analisis (teks) dari data batch
+- ✅ **History Tracking** - Riwayat batch & report dengan download ulang file
 
 ### 🔒 Data & Security
 
@@ -272,6 +274,41 @@ CREATE TABLE download_logs (
 );
 ```
 
+**batch_history:**
+
+```sql
+CREATE TABLE batch_history (
+   id INTEGER PRIMARY KEY AUTOINCREMENT,
+   task_name TEXT NOT NULL,
+   start_date TEXT,
+   end_date TEXT,
+   output_format TEXT NOT NULL,
+   total_rows INTEGER NOT NULL,
+   columns_json TEXT NOT NULL,
+   file_path TEXT NOT NULL,
+   status TEXT DEFAULT 'success',
+   note TEXT,
+   created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+**report_history:**
+
+```sql
+CREATE TABLE report_history (
+   id INTEGER PRIMARY KEY AUTOINCREMENT,
+   task_name TEXT NOT NULL,
+   generator TEXT NOT NULL,
+   start_date TEXT,
+   end_date TEXT,
+   total_rows INTEGER NOT NULL,
+   file_path TEXT NOT NULL,
+   status TEXT DEFAULT 'success',
+   note TEXT,
+   created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+```
+
 ---
 
 ## 🔧 Configuration
@@ -314,6 +351,9 @@ CREATE TABLE download_logs (
 
 # Test download detection
 .venv\Scripts\python.exe tests\test_download_detection.py
+\n+# Smoke test dashboard & report
+.venv\Scripts\python.exe scripts\smoke_seed.py
+.venv\Scripts\python.exe tests\test_dashboard_report_smoke.py
 ```
 
 ### Test Results
@@ -323,6 +363,9 @@ CREATE TABLE download_logs (
 - ✅ Smart validation: Skip duplicate (29s)
 - ✅ Database: ACID transactions working
 - ✅ UI: Table format responsive
+- ✅ Dashboard: Metrics & chart tampil
+- ✅ Batching: CSV/XLSX digabung & riwayat tercatat
+- ✅ Report: Generator Seruti/Susenas membuat laporan & riwayat tercatat
 
 ---
 
